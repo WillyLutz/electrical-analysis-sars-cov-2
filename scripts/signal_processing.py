@@ -11,7 +11,7 @@ def make_envelope(y, threshold, distance):
     return peaks
 
 
-def filter_peak(signal, order, lowcut):
+def butter_filter(signal, order, lowcut):
     freq = 10000
     nyq = 0.5 * freq
     low = lowcut / nyq
@@ -58,7 +58,7 @@ def filter_noise_by_fft_peak(path, channel, peak_threshold=9e10, peak_distance=5
     for p in peaks_freq:
         unfiltered_fft, unfiltered_freqs_fft = fast_fourier(unfiltered_signal, freq)
 
-        filtered_signal, xanswer, yanswer = filter_peak(unfiltered_signal, p, filter_margin, filter_order, duration)
+        filtered_signal, xanswer, yanswer = butter_filter(unfiltered_signal, p, filter_margin, filter_order, duration)
 
         filtered_fft, filtered_fft_freq = fast_fourier(filtered_signal, freq)
 

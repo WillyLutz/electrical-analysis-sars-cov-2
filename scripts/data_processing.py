@@ -1,84 +1,280 @@
 import os
 import re
+import sys
 
 import pandas as pd
 import signal_processing as spr
 import numpy as np
 import machine_learning as ml
-import FireFiles as ff
+from firelib.firelib import firefiles as ff
+import PATHS as P
+from pathlib import Path
+import matplotlib.pyplot as plt
 
-def get_hdd_raw_paths():
-    path_per_day = ["E:/Organoids/T=0", "E:/Organoids/T=4H", "E:/Organoids/T=6J", "E:/Organoids/T=7J",
-                    "E:/Organoids/T=24H", "E:/Organoids/T=30", "E:/Organoids/T=48H"]
-    path_in_ni = ["COV", "NI"]
-    files_paths = []
-    for day in path_per_day:
-        for in_ni in path_in_ni:
-            for file in os.listdir(day + "/" + in_ni):
-                if re.search("Analog", file):
-                    files_paths.append(day + "/" + in_ni + "/" + file)
-    return files_paths
 
-def process_raw_to_csv(path):
-    files = ff.get_all_files(path)
+def concatenate_datasets():
+    print()
+
+
+def make_highest_features_dataset_from_complete_dataset(foi, complete_dataset, percentage=0.05, save=False):
+    """
+    Extract columns corresponding to features of interest from a complete dataset and saves/returns it.
+
+    :param foi: the columns names of the features of interests
+    :param complete_dataset: the complete dataset to extract the features from.
+    :param percentage: for the title. Corresponding percentage for the highest features of interest.
+    :return: dataframe of interest
+    """
+    df_foi = complete_dataset[[f for f in foi]]
+    df_foi["status"] = complete_dataset["status"]
+    if save:
+        df_foi.to_csv(os.path.join(os.path.dirname(complete_dataset), f"highest {percentage * 100}% features - "
+                                                                      f"{os.path.basename(complete_dataset)}"),
+                      index=False)
+    return df_foi
+
+
+def make_raw_frequency_plots_from_pr_files(parent_dir, to_include=(), to_exclude=(), save=False, verbose=False):
+    all_files = ff.get_all_files(os.path.join(parent_dir))
+    files = []
+    organoids = []
+    for f in all_files:
+        if all(i in f for i in to_include) and (not any(e in f for e in to_exclude)):
+            files.append(f)
+
+            organoid_key = os.path.basename(Path(f).parent.parent.parent.parent) + "_" + \
+                           os.path.basename(Path(f).parent.parent) + "_" + os.path.basename(Path(f).parent)
+            if organoid_key not in organoids:
+                organoids.append(organoid_key)  # for parent: P.NOSTACHEL ==> - StachelINF2
+
+            if verbose:
+                print("added: ", f)
+    number_of_organoids = len(organoids)
+
+    print(number_of_organoids, organoids)
+    columns = list(range(0, 300))
+    dataset = pd.DataFrame(columns=columns)
+    target = pd.DataFrame(columns=["status", ])
+
+    n_processed_files = 0
+    infected_organoids = []
+    non_infected_organoids = []
     for f in files:
-        sign = os.path.basename(f).split("-")
-        title = "pr_" + sign[0] + "-" + sign[1] + "-" + sign[2] + "-" + sign[3] + ".csv"
-
-        raw_to_csv(f, title, 7, 600007)
         print(f)
+        organoid_key = os.path.basename(Path(f).parent.parent.parent.parent) + "_" + \
+                       os.path.basename(Path(f).parent.parent) + "_" + os.path.basename(Path(f).parent)
 
-def raw_to_csv(initial_path: str, csv_name: str, head_line=0, end_line=0):
+        df = pd.read_csv(f)
+
+        df_top = top_N_electrodes(df, 35, "TimeStamp [µs]")
+
+        channels = df_top.columns
+
+        fft_all_channels = pd.DataFrame()
+
+        # fft of the signal
+        for ch in channels[1:]:
+            filtered = spr.butter_filter(df_top[ch], order=3, lowcut=50)
+            clean_fft, clean_freqs = spr.fast_fourier(filtered, 10000)
+            fft_all_channels[ch] = clean_fft
+            fft_all_channels["Frequency [Hz]"] = clean_freqs
+        # mean between the topped channels
+        df_mean = merge_all_columns_to_mean(fft_all_channels, "Frequency [Hz]").round(3)
+        downsampled_df = down_sample(df_mean["mean"], 300, 'mean')
+        if "INF" in organoid_key:
+            infected_organoids.append(downsampled_df)
+            print("added infected: ", organoid_key, len(downsampled_df))
+        if "NI" in organoid_key:
+            non_infected_organoids.append(downsampled_df)
+            print("added not infected: ", organoid_key, len(downsampled_df))
+
+    non_infected_arrays = [np.array(x) for x in non_infected_organoids]
+    mean_non_infected = [np.mean(k) for k in zip(*non_infected_arrays)]
+    std_non_infected = [np.std(k) for k in zip(*non_infected_arrays)]
+    low_std_non_infected = [mean_non_infected[x] - std_non_infected[x] for x in range(len(mean_non_infected))]
+    high_std_non_infected = [mean_non_infected[x] + std_non_infected[x] for x in range(len(mean_non_infected))]
+    plt.plot([int(x * 5000 / 300) for x in range(0, 300)], mean_non_infected, color='blue', label='not infected')
+    plt.fill_between(x=[int(x * 5000 / 300) for x in range(0, 300)], y1=low_std_non_infected, y2=high_std_non_infected,
+                     color='blue', alpha=.5)
+
+    infected_arrays = [np.array(x) for x in infected_organoids]
+    mean_infected = [np.mean(k) for k in zip(*infected_arrays)]
+    std_infected = [np.std(k) for k in zip(*infected_arrays)]
+    low_std_infected = [mean_infected[x] - std_infected[x] for x in range(len(mean_infected))]
+    high_std_infected = [mean_infected[x] + std_infected[x] for x in range(len(mean_infected))]
+    plt.plot([int(x * 5000 / 300) for x in range(0, 300)], mean_infected, color='red', label='infected')
+    plt.fill_between(x=[int(x * 5000 / 300) for x in range(0, 300)], y1=low_std_infected, y2=high_std_infected,
+                     color='red', alpha=.5)
+
+    title = "Smoothened frequencies for all - Stachel organoids at T=24H"
+    plt.title(title)
+    plt.xlabel("Frequency [Hz]")
+    plt.ylabel("Amplitude [pV]")
+    plt.legend()
+    if save:
+        plt.savefig(os.path.join(P.RESULTS, title + ".png"), dpi=1000)
+    plt.show()
+
+    #
+    #
+    #
+    #     # construct the dataset with n features
+    #     dataset.loc[len(dataset)] = downsampled_df
+    #
+    #     path = Path(f)
+    #     if "NI" in os.path.basename(path.parent.parent):
+    #         target.loc[len(target)] = 0
+    #     elif "INF" in os.path.basename(path.parent.parent):
+    #         target.loc[len(target)] = 1
+
+    # if verbose:
+    #     progress = int(np.ceil(n_processed_files / len(files) * 100))
+    #     sys.stdout.write(f"\rProgression of processing all_files: {progress}%")
+    #     sys.stdout.flush()
+    #     n_processed_files += 1
+
+
+def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude=(), save=False, verbose=False):
     """
-    Delete lines before a limit line in a text file.
+    Use frequency files of format two columns (one column 'Frequencies [Hz]' and one column 'mean') to generate a
+    dataset used for classification.
 
-    :param csv_name: saving name of the final csv
-    :param initial_path: path of the text file.
-    :param head_line: index number of the beginning limit line.
-    :param end_line: index number of the end limit line
-    :return: beheaded file.
+    :param to_exclude:
+    :param to_include:
+    :param timepoint: The time point to study.
+    :param title: name of the resulting dataset.
+    :param parent_dir: name of the parent directory that contains all files to make the dataset from.
+    :return:
     """
-    csv_path = os.path.dirname(initial_path) + "\\" + csv_name
-    with open(initial_path, "r") as f:
-        if end_line == 0:
-            end_line = len(f.readlines())
-        rows = f.readlines()[head_line:end_line]
-        separated_columns = []
-        for r in rows:
-            r = r[:-2]
-            separated_columns.append(r.split(","))
-        df = pd.DataFrame(separated_columns, columns=["TimeStamp [µs]", "47 (ID=0) [pV]", "48 (ID=1) [pV]", "46 (ID=2) [pV]", "45 (ID=3) [pV]", "38 (ID=4) [pV]",
-            "37 (ID=5) [pV]", "28 (ID=6) [pV]", "36 (ID=7) [pV]", "27 (ID=8) [pV]", "17 (ID=9) [pV]", "26 (ID=10) [pV]",
-            "16 (ID=11) [pV]", "35 (ID=12) [pV]", "25 (ID=13) [pV]", "15 (ID=14) [pV]", "14 (ID=15) [pV]",
-            "24 (ID=16) [pV]", "34 (ID=17) [pV]", "13 (ID=18) [pV]", "23 (ID=19) [pV]", "12 (ID=20) [pV]",
-            "22 (ID=21) [pV]", "33 (ID=22) [pV]", "21 (ID=23) [pV]", "32 (ID=24) [pV]", "31 (ID=25) [pV]",
-            "44 (ID=26) [pV]", "43 (ID=27) [pV]", "41 (ID=28) [pV]", "42 (ID=29) [pV]", "52 (ID=30) [pV]",
-            "51 (ID=31) [pV]", "53 (ID=32) [pV]", "54 (ID=33) [pV]", "61 (ID=34) [pV]", "62 (ID=35) [pV]",
-            "71 (ID=36) [pV]", "63 (ID=37) [pV]", "72 (ID=38) [pV]", "82 (ID=39) [pV]", "73 (ID=40) [pV]",
-            "83 (ID=41) [pV]", "64 (ID=42) [pV]", "74 (ID=43) [pV]", "84 (ID=44) [pV]", "85 (ID=45) [pV]",
-            "75 (ID=46) [pV]", "65 (ID=47) [pV]", "86 (ID=48) [pV]", "76 (ID=49) [pV]", "87 (ID=50) [pV]",
-            "77 (ID=51) [pV]", "66 (ID=52) [pV]", "78 (ID=53) [pV]", "67 (ID=54) [pV]", "68 (ID=55) [pV]",
-            "55 (ID=56) [pV]", "56 (ID=57) [pV]", "58 (ID=58) [pV]", "57 (ID=59) [pV]"])
-        df.to_csv(csv_path, index=False)
+    files = ff.get_all_files(os.path.join(parent_dir))
+    freq_files = []
+    for f in files:
+        if all(i in f for i in to_include) and (not any(e in f for e in to_exclude)):
+            freq_files.append(f)
+            if verbose:
+                print("added: ", f)
+    columns = list(range(0, 300))
+    dataset = pd.DataFrame(columns=columns)
+    target = pd.DataFrame(columns=["status", ])
+
+    n_processed_files = 0
+    for f in freq_files:
+        df = pd.read_csv(f)
+        # Downsampling by n
+        downsampled_df = down_sample(df["mean"], 300, 'mean')
+
+        # construct the dataset with n features
+        dataset.loc[len(dataset)] = downsampled_df
+
+        path = Path(f)
+        if "NI" in os.path.basename(path.parent.parent):
+            target.loc[len(target)] = 0
+        elif "INF" in os.path.basename(path.parent.parent):
+            target.loc[len(target)] = 1
+
+        if verbose:
+            progress = int(np.ceil(n_processed_files / len(freq_files) * 100))
+            sys.stdout.write(f"\rProgression of processing files: {progress}%")
+            sys.stdout.flush()
+            n_processed_files += 1
+    dataset["status"] = target["status"]
+    if verbose:
+        print("\n")
+    if save:
+        dataset.to_csv(os.path.join(P.DATASETS, title), index=False)
+    return dataset
 
 
-def extract_sample_from_dataset(dataset_path: str, percentage: int):
+def make_filtered_sampled_freq_files():
     """
-    Cut and keep a percentage of a dataset. The part that will be kept is starting from the beginning of the dataset.
+    make frequency files of format two columns (one column 'Frequencies [Hz]' and one column 'mean') from raw files.
 
-    :param dataset_path: path to the dataset
-    :param percentage: the percentage of the original dataset that will be kept
-    :return: Pandas DataFrame object. Size reduced dataset
+    :return:
     """
-    csv_path = os.path.dirname(os.path.abspath(dataset_path)) + "\\sample_data.csv"
+    for timepoint in ("T=0MIN", "T=30MIN", "T=24H"):
+        for stach in (P.NOSTACHEL, P.STACHEL, P.FOUR_ORGANOIDS):
+            files = ff.get_all_files(os.path.join(stach, timepoint))
+            raw_files = []
+            for f in files:
+                if "pr_" in f:
+                    raw_files.append(f)
 
-    df = pd.read_csv(dataset_path)
-    length = len(df.index)
-    sample_limit = int(percentage * length)
+            for f in raw_files:
+                print(f)
+                df = pd.read_csv(f)
+                df_top = top_N_electrodes(df, 35, "TimeStamp")
+                samples = equal_samples(df_top, 30)
+                channels = df_top.columns
+                n_sample = 0
+                for df_s in samples:
+                    fft_all_channels = pd.DataFrame(columns=["Frequency [Hz]", "mean"])
 
-    dfc = df[:sample_limit]
-    dfc.to_csv(csv_path, index=False)
-    return dfc
+                    # fft of the signal
+                    for ch in channels[1:]:
+                        filtered = spr.butter_filter(df_s[ch], order=3, lowcut=50)
+                        clean_fft, clean_freqs = spr.fast_fourier(filtered, 10000)
+                        fft_all_channels["Frequency [Hz]"] = clean_freqs
+                        fft_all_channels[ch] = clean_fft
+
+                    # mean between the topped channels
+                    df_mean = merge_all_columns_to_mean(fft_all_channels, "Frequency [Hz]").round(3)
+
+                    id = os.path.basename(f).split("_")[1]
+                    df_mean.to_csv(os.path.join(os.path.dirname(f), f"freq_50hz_sample{n_sample}_{id}"), index=False)
+                    n_sample += 1
+
+
+def make_filtered_numbered_freq_files(mono_time, top_n=35, truncate=30, n_features=300, lowcut=10):
+    files = ff.get_all_files("E:\\Organoids\\four organoids per label\\")
+    paths_pr = []
+    columns = list(range(0, n_features))
+
+    dataset = pd.DataFrame(columns=columns)
+    identities = pd.DataFrame(columns=["organoid number", ])
+    target = pd.DataFrame(columns=["status", ])
+    for f in files:
+        if "pr_" in f:
+            paths_pr.append(f)
+    print(paths_pr)
+    for p in paths_pr:
+        if p.split("\\")[3] == mono_time:
+            print("path = ", p)
+            df = pd.read_csv(p)
+            # selecting top channels by their std
+
+            df_top = top_N_electrodes(df, top_n, "TimeStamp")
+
+            samples = equal_samples(df_top, truncate)
+            channels = df_top.columns
+            for df_s in samples:
+                fft_all_channels = pd.DataFrame()
+
+                # fft of the signal
+                for ch in channels[1:]:
+                    filtered = spr.butter_filter(df_s[ch], order=3, lowcut=lowcut)
+                    clean_fft, clean_freqs = spr.fast_fourier(filtered, 10000)
+                    fft_all_channels[ch] = clean_fft
+                    fft_all_channels["frequency"] = clean_freqs
+                # mean between the topped channels
+                df_mean = merge_all_columns_to_mean(fft_all_channels, "frequency").round(3)
+
+                # Downsampling by n
+                downsampled_df = down_sample(df_mean["mean"], n_features, 'mean')
+
+                # construct the dataset with n features
+                dataset.loc[len(dataset)] = downsampled_df
+                identities.loc[len(identities)] = p.split("\\")[5]
+                if p.split("\\")[4] == "NI":
+                    target.loc[len(target)] = 0
+                elif p.split("\\")[4] == "INF":
+                    target.loc[len(target)] = 1
+
+    dataset.insert(loc=0, column="organoid number", value=identities["organoid number"])
+    dataset["status"] = target["status"]
+    folder = "Four organoids\\datasets\\"
+    ff.verify_dir(folder)
+    title = f"{folder}filtered_{lowcut}_numbered_frequency_top{str(top_n)}_nfeatures_{n_features}_{mono_time}.csv"
+    dataset.to_csv(title, index=False)
 
 
 def down_sample(data, n: int, mode: str):
@@ -96,7 +292,7 @@ def down_sample(data, n: int, mode: str):
         ds_data = ds_data[:-excedent or None]
         return ds_data
     else:
-        raise Exception("downsampling: length of data "+str(len(data.index)) + "< n "+str(n))
+        raise Exception("downsampling: length of data " + str(len(data.index)) + "< n " + str(n))
 
 
 def equal_samples(df, n):
@@ -179,54 +375,6 @@ def clean_std_threshold(df, threshold):
     #     dfc.to_csv(folder_path + "/std_cleaned_freq.csv", index=False)
 
 
-def organoid_cartography_std_based(standards, threshold):
-    min_key = min(standards, key=standards.get)
-    min_value = standards.get(min_key)
-    max_key = max(standards, key=standards.get)
-    max_value = standards.get(max_key)
-    ratio = max_value / min_value
-
-    electrodes_by_row = 8
-    electrodes_number = len(standards) - 1
-    current_drawn = 0
-    nrows = int(np.ceil(electrodes_number / electrodes_by_row))
-    organoid = np.zeros((nrows, electrodes_by_row))
-
-    row = 0
-    column = 0
-    keylist = list(standards)
-    while current_drawn <= electrodes_number:
-        detected = False
-        if standards.get(keylist[current_drawn]) > (min_value + threshold * (max_value - min_value)):
-            detected = True
-        if detected:
-            organoid[row, column] = 1
-        else:
-            organoid[row, column] = 0
-
-        # increments
-        if column < electrodes_by_row - 1:
-            column += 1
-            current_drawn += 1
-        elif column == electrodes_by_row - 1:
-            row += 1
-            column = 0
-            current_drawn += 1
-
-    # print section
-    printable_organoid = organoid.tolist()
-    for ir in range(len(printable_organoid)):
-        for ic in range(len(printable_organoid[ir])):
-            if printable_organoid[ir][ic] == 0.0:
-                printable_organoid[ir][ic] = " |"
-            else:
-                printable_organoid[ir][ic] = "0|"
-
-    for row in printable_organoid:
-        print(''.join(row))
-    print()
-
-
 def merge_all_columns_to_mean(df: pd.DataFrame, except_column=""):
     excepted_column = pd.DataFrame()
     if except_column != "":
@@ -247,80 +395,6 @@ def merge_all_columns_to_mean(df: pd.DataFrame, except_column=""):
 
     return df_mean
 
-
-def truncate_fft_cleanSTD_window_downsampling_mergeChannels(paths_full, channels, truncate, fft_freq, std_threshold,
-                                                            low_window, high_window, n_features):
-    columns = list(range(0, n_features))
-    dataset = pd.DataFrame(columns=columns)
-
-    target = pd.DataFrame(columns=["status", ])
-    # truncate into 30 samples TEMPORAL
-    for p in paths_full:
-        print("path = ", p)
-        df = pd.read_csv(p)
-        samples = equal_samples(df, truncate)
-
-        # fft for each samples
-        for df_s in samples:
-
-            fft_all_channels = pd.DataFrame()
-            for ch in channels[1:]:
-                clean_fft, clean_freqs = spr.fast_fourier(df_s[ch], fft_freq)
-                fft_all_channels[ch] = clean_fft
-                fft_all_channels["frequency"] = clean_freqs
-
-            # clean the channels in each samples
-            df_clean = clean_std_threshold(fft_all_channels, std_threshold)
-
-            # mean between the cleaned channels
-            df_mean = merge_all_columns_to_mean(df_clean, "frequency")
-
-            # windowing 200-3000 Hz
-            windowed_df = pd.DataFrame(columns=["frequency", "mean", ])
-            windowed_df["frequency"] = df_mean["frequency"][low_window * 2:high_window * 2]
-            windowed_df["mean"] = df_mean["mean"][low_window * 2:high_window * 2]
-
-            # Downsampling by 300
-            downsampled_df = down_sample(windowed_df["mean"], n_features, 'mean')
-
-            # construct the dataset with 300 features
-            dataset.loc[len(dataset)] = downsampled_df
-
-            if p.split("/")[1][-2:] == "IN":
-                target.loc[len(target)] = 1
-            elif p.split("/")[1][-2:] == "NI":
-                target.loc[len(target)] = 0
-
-    dataset["status"] = target["status"]
-    title = "ml_datasets/downsampled" + str(n_features) + "features_" + str(low_window) + "_" + str(
-        high_window) + "_Hz.csv"
-    dataset.to_csv(title, index=False)
-
-    # training
-    dataset = pd.read_csv(title)
-    X = dataset[dataset.columns[:-1]]
-    y = dataset["status"]
-
-    modelpath = "ml_models_" + str(n_features) + "features_" + str(low_window) + "_" + str(high_window) + "_Hz/"
-
-    modelname = "svm_linear"
-    model_perf = modelpath + modelname + ".sav"
-    ml.support_vector_machine(X, y, kernel='linear', save=True, modelname=modelname, modelpath=modelpath,
-                              decision_function_shape="ovr")
-    ml.model_performance_analysis(model_perf, "svm", X, y, train_size=0.7)
-    print(0)
-
-    modelname = "rfc1000"
-    model_perf = modelpath + modelname + ".sav"
-    ml.random_forest_classifier(X, y, n_estimators=1000, save=True, modelname=modelname, modelpath=modelpath, )
-    ml.model_performance_analysis(model_perf, "rfc", X, y, train_size=0.7)
-    print(0)
-
-    modelname = "rfc10000"
-    model_perf = modelpath + modelname + ".sav"
-    ml.random_forest_classifier(X, y, n_estimators=10000, save=True, modelname=modelname, modelpath=modelpath, )
-    ml.model_performance_analysis(model_perf, "rfc", X, y, train_size=0.7)
-    print(0)
 
 def top_N_electrodes(df, n, except_column):
     """
