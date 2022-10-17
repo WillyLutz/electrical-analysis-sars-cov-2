@@ -151,8 +151,8 @@ def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude
     for f in files:
         if all(i in f for i in to_include) and (not any(e in f for e in to_exclude)):
             freq_files.append(f)
-            if verbose:
-                print("added: ", f)
+    if verbose:
+        print("added: ", freq_files)
     columns = list(range(0, 300))
     dataset = pd.DataFrame(columns=columns)
     target = pd.DataFrame(columns=["status", ])

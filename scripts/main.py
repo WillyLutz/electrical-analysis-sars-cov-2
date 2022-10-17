@@ -23,72 +23,37 @@ import get_plots as gp
 
 
 def main():
-    # make dataset from scratch :                       dpr.make_filtered_sampled_freq_files
-    #                                                   dpr.make_dataset_from_freq_files
-    # train first model
-    # get the highest features :                        ml.get_features_of_interest_from_trained_model
-    # make new dataset based on highest features :      dpr.make_highest_features_dataset_from_complete_dataset
-    # train new model :                                 ml.train_model_on_features_of_interest
-    # test                                              ml.test_model
-
-    # procedure()
-
-    # clf = pickle.load(open(os.path.join(P.MODELS, "T=24H mixed organoids - base foi - no stachel.sav"), "rb"))
-    # df24 = dpr.make_dataset_from_freq_files(timepoint="T=30MIN",
-    #                                         parent_dir=P.NOSTACHEL,
-    #                                         to_include=("freq_50hz_sample",),
-    #                                         to_exclude=("TTX", "STACHEL"),
-    #                                         verbose=True,
-    #                                         save=True,
-    #                                         title="test df24.csv"
-    #                                         )
-    df = pd.read_csv(os.path.join(P.FOUR_ORGANOIDS, "T=24H/INF/3/",
-                                  "freq_50hz_sample3_2022-06-10T10-57.csv"))
-
-    plt.plot(df[df.columns[1]], df[df.columns[0]], linewidth=.5, color="black")
-    title = "organoid signal in frequencies domain"
-    plt.title(title)
-    plt.xlabel("Frequencies [Hz]")
-    plt.ylabel("Amplitude [pV]")
-    plt.legend()
-    plt.show()
-
-    dfds = dpr.down_sample(df["mean"], 300, 'mean')
-    plt.plot(dfds, linewidth=1, color="black")
-    title = "Smoothened signal in frequencies domain"
-    plt.title(title)
-    plt.xlabel("Frequencies [Hz]")
-    plt.ylabel("Amplitude [pV]")
-    plt.legend()
-    plt.show()
-    # df24 = dpr.make_raw_frequency_plots_from_pr_files(parent_dir=P.NOSTACHEL,
-    #                                                   to_include=("pr_", "T=24H"),
-    #                                                   to_exclude=("TTX", "STACHEL"),
-    #                                                   verbose=True,
-    #                                                   save=True,
-    #                                                   )
-
-    # df24 = pd.read_csv(os.path.join(P.DATASETS, "test df24.csv"))
-    # hdf24 = dpr.make_highest_features_dataset_from_complete_dataset(clf.feature_names, df24)
-
-    # scores = ml.test_model(clf, hdf24)
-    # print(np.mean(scores))
+    print()
 
 
-def procedure():
-    parent_dir = P.FOUR_ORGANOIDS
-    df24 = dpr.make_dataset_from_freq_files(parent_dir=parent_dir,
+def test_from_scratch():
+    df24 = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                             to_include=("freq_50hz_sample", "T=24H"),
-                                            to_exclude=("TTX", "STACHEL")
-                                            )
+                                            to_exclude=("TTX", "STACHEL"),
+                                            verbose=True,
+                                            save=False, )
     clf = ml.train_model_from_dataset(df24)
     foi = ml.get_features_of_interest_from_trained_model(clf)
-    print(foi)
+    del clf
     hdf24 = dpr.make_highest_features_dataset_from_complete_dataset(foi, df24)
-    clf2 = ml.train_model_from_dataset(hdf24)
+    clf = ml.train_model_from_dataset(hdf24)
 
-    scores = ml.test_model(clf2, hdf24)
-    print(np.mean(scores))
+    scores = ml.test_model(clf, hdf24, iterations=15, verbose=True)
+    print(scores)
+
+
+def test_with_loaded_model():
+    clf = pickle.load(open(os.path.join(P.MODELS, "T=24H mixed organoids - base foi - no stachel.sav"), "rb"))
+    df24 = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                            to_include=("freq_50hz_sample", "T=24H", "STACHEL"),
+                                            to_exclude=("TTX",),
+                                            verbose=True,
+                                            save=False, )
+
+    hdf24 = dpr.make_highest_features_dataset_from_complete_dataset(clf.feature_names, df24)
+
+    scores = ml.test_model(clf, hdf24, iterations=15, verbose=True, show_metrics=True)
+    print(scores)
 
 
 main()

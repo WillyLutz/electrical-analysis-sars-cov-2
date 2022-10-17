@@ -17,6 +17,7 @@ import data_processing as dpr
 import data_analysis as dan
 from firelib.firelib import firefiles as ff
 import PATHS as P
+import sys
 
 
 def train_model_from_dataset(dataset, model_save_path="", save=False):
@@ -155,7 +156,7 @@ def get_features_of_interest_from_trained_model(clf, percentage=0.05):
     return idx_foi
 
 
-def test_model(clf, dataset, iterations=1):
+def test_model(clf, dataset, iterations=1, verbose=False, show_metrics=False):
     """
     Test a model on a dataset.
 
@@ -167,26 +168,55 @@ def test_model(clf, dataset, iterations=1):
     X = dataset[dataset.columns[:-1]]
     y = dataset["status"]
 
-    scores = []
-    overall_tp = []
-    overall_tn = []
-    overall_fp = []
-    overall_fn = []
+    accuracies_over_iterations = []
+    tp_confidence_over_iterations = []
+    tn_confidence_over_iterations = []
+    fp_confidence_over_iterations = []
+    fn_confidence_over_iterations = []
+    tp_count_over_iterations = []
+    tn_count_over_iterations = []
+    fp_count_over_iterations = []
+    fn_count_over_iterations = []
+    entries_count_over_iterations = []
+
+    a, b, c, d = train_test_split(X, y, test_size=0.3)  # Do not do that at home, kids
+    number_of_operations = iterations * (len(b.index) + 2*len(d.index))
+    ongoing_operation = 0
+
+    if verbose:
+        progress = 0
+        sys.stdout.write(f"\rTesting model: {progress}%")
+        sys.stdout.flush()
 
     for iter in range(iterations):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
+        entries_count_over_iterations.append(len(y_test))
 
         # get predictions and probabilities
         predictions = []
         targets = []
         for i in X_test.index:
             row = X_test.loc[i, :]
-            #y_true = y_test[i]
+            # y_true = y_test[i]
             y_pred = clf.predict([row])[0]
             proba_class = clf.predict_proba([row])[0]
             predictions.append((y_pred, proba_class[0], proba_class[1]))
+
+            ongoing_operation += 1
+
+        if verbose:
+            progress = int(np.ceil(ongoing_operation / number_of_operations * 100))
+            sys.stdout.write(f"\rTesting model: {progress}%")
+            sys.stdout.flush()
+
         for i in y_test.index:
             targets.append(y_test.loc[i])
+            ongoing_operation += 1
+
+        if verbose:
+            progress = int(np.ceil(ongoing_operation / number_of_operations * 100))
+            sys.stdout.write(f"\rTesting model: {progress}%")
+            sys.stdout.flush()
 
         # get metrics out of predictions
         proba_tp = []
@@ -199,25 +229,66 @@ def test_model(clf, dataset, iterations=1):
             proba_ni = predictions[i][1]
             proba_inf = predictions[i][2]
 
-            if y_true == y_pred:  # true...
-                if y_true == 0:  # ...negative
-                    proba_tn.append(proba_ni)
-                else: # ...positive
-                    proba_tp.append(proba_inf)
-            else:  # false...
-                if y_true == 0:  # ...negative
-                    proba_fn.append(proba_ni)
-                else:  # ...positive
+            if y_pred == 1:  # predicted infected
+                if y_true == 0:  # but is not infected => FP
                     proba_fp.append(proba_inf)
+                if y_true == 1:  # and is infected => TP
+                    proba_tp.append(proba_inf)
+            if y_pred == 0:  # predicted not infected
+                if y_true == 0:  # and is not infected => TN
+                    proba_tn.append(proba_ni)
+                if y_true == 1:  # but is infected => FN
+                    proba_fn.append(proba_ni)
 
-        print("number of true positives: ", len(proba_tp), " with a mean probability of: ", np.mean(proba_tp))
-        print("number of true negatives: ", len(proba_tn), " with a mean probability of: ", np.mean(proba_tn))
-        print("number of false positives: ", len(proba_fp), " with a mean probability of: ", np.mean(proba_fp))
-        print("number of false negatives: ", len(proba_fn), " with a mean probability of: ", np.mean(proba_fn))
-        print("accuracy: ", (len(proba_tn)+len(proba_tp))/(len(proba_fn)+len(proba_fp)))
-        # todo: differences between vote probabilities and confidence in the prediction ?
-        forestci.random_forest_error()
-        # todo: calculer le score manuellement et avoir les probabilités pour chaque prédiction
-        #scores.append(clf.score(X_test, y_test))
+            if verbose:
+                progress = int(np.ceil(ongoing_operation / number_of_operations * 100))
+                sys.stdout.write(f"\rTesting model: {progress}%")
+                sys.stdout.flush()
+            ongoing_operation += 1
 
-    return scores
+        accuracy = (len(proba_tp) + len(proba_tn)) / (len(proba_tp) + len(proba_tn) + len(proba_fp) + len(proba_fn))
+        accuracies_over_iterations.append(accuracy)
+
+        tp_count_over_iterations.append(len(proba_tp))
+        if tp_count_over_iterations:
+            tp_confidence_over_iterations.append(np.mean(proba_tp))
+
+        tn_count_over_iterations.append(len(proba_tn))
+        if tn_count_over_iterations:
+            tn_confidence_over_iterations.append(np.mean(proba_tn))
+
+        fp_count_over_iterations.append(len(proba_fp))
+        if fp_count_over_iterations:
+            fp_confidence_over_iterations.append(np.mean(proba_fp))
+
+        fn_count_over_iterations.append(len(proba_fn))
+        if fn_count_over_iterations:
+            fn_confidence_over_iterations.append(np.mean(proba_fn))
+
+        progress = int(np.ceil(ongoing_operation / number_of_operations * 100))
+        sys.stdout.write(f"\rTesting model: {progress}%")
+        sys.stdout.flush()
+        ongoing_operation += 1
+
+    tp_confidence_mean = np.mean(tp_confidence_over_iterations)
+    tn_confidence_mean = np.mean(tn_confidence_over_iterations)
+    fp_confidence_mean = np.mean(fp_confidence_over_iterations)
+    fn_confidence_mean = np.mean(fn_confidence_over_iterations)
+    accuracy_mean = np.mean(accuracies_over_iterations)
+
+    tp_confidence_std = np.std(tp_confidence_over_iterations)
+    tn_confidence_std = np.std(tn_confidence_over_iterations)
+    fp_confidence_std = np.std(fp_confidence_over_iterations)
+    fn_confidence_std = np.std(fn_confidence_over_iterations)
+    accuracy_std = np.std(accuracies_over_iterations)
+    print("\n")
+    if show_metrics:
+        print(f"Mean number of tested entries: {int(np.mean(entries_count_over_iterations))}\n"
+              f"True positives count: {int(np.mean(tp_count_over_iterations))}\n"
+              f"True negatives count: {int(np.mean(tn_count_over_iterations))}\n"
+              f"False positives count:{int(np.mean(fp_count_over_iterations))}\n"
+              f"False negatives count:{int(np.mean(fn_count_over_iterations))}")
+    if iterations > 1:
+        return (accuracy_mean, accuracy_std), (tp_confidence_mean, tp_confidence_std), (tn_confidence_mean, tn_confidence_std), (fp_confidence_mean, fp_confidence_std), (fn_confidence_mean, fn_confidence_std)
+    else:
+        return (accuracy_mean, 0), (tp_confidence_mean, 0), (tn_confidence_mean, 0), (fp_confidence_mean, 0), (fn_confidence_mean, 0)
