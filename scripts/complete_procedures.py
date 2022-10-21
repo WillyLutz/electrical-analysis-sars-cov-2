@@ -135,8 +135,8 @@ def impact_of_stachel_on_classification_performance():
                 fn_cup = (int(sub_df["FN CUP"][0] * 100), sub_df["FN CUP std"][0])
                 axes[r, s].bar(1, tp_ratio, edgecolor='black', color='darkgray')
                 axes[r, s].bar(1, fn_ratio, bottom=tp_ratio, edgecolor='black', color='whitesmoke')
-                axes[r, s].text(0.6, tp_ratio / 2, "CUP=" + str(tp_cup[0]) + "%")
-                axes[r, s].text(0.6, fn_ratio / 2 + tp_ratio, "CUP=" + str(fn_cup[0]) + "%")
+                axes[r, s].text(0.6, tp_ratio / 2, "CUP TP\n=" + str(tp_cup[0]) + "%")
+                axes[r, s].text(0.6, fn_ratio / 2 + tp_ratio, "CUP FN\n=" + str(fn_cup[0]) + "%")
 
                 tn_ratio = int(sub_df["TN cnt"][0] / number_of_negative_entries * 100)
                 fp_ratio = int(sub_df["FP cnt"][0] / number_of_negative_entries * 100)
@@ -145,8 +145,8 @@ def impact_of_stachel_on_classification_performance():
                 axes[r, s].bar(2, tn_ratio, edgecolor='black', color='darkgray', label="Correctly predicted")
                 axes[r, s].bar(2, fp_ratio, bottom=tn_ratio, edgecolor='black', color='whitesmoke',
                                label="Misclassified INF/NI")
-                axes[r, s].text(1.6, tn_ratio / 2, "CUP=" + str(tn_cup[0]) + "%")
-                axes[r, s].text(1.6, fp_ratio / 2 + tn_ratio, "CUP=" + str(fp_cup[0]) + "%")
+                axes[r, s].text(1.6, tn_ratio / 2, "CUP TN\n=" + str(tn_cup[0]) + "%")
+                axes[r, s].text(1.6, fp_ratio / 2 + tn_ratio, "CUP FP\n=" + str(fp_cup[0]) + "%")
 
                 # -----------------------------------------------
                 axes[r, s].set_axisbelow(True)
@@ -172,6 +172,6 @@ def impact_of_stachel_on_classification_performance():
 
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc='lower center')
-    fig.suptitle("Performance of the model trained at T=24H", fontsize=15)
+    fig.suptitle("impact of Stachel on predictions done by the model trained at T=24H", fontsize=15)
 
     plt.show()
