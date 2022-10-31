@@ -1,6 +1,6 @@
 import os
 
-DISK = "/media/willylutz/TOSHIBA EXT/"
+DISK = "/media/willylutz/TOSHIBA EXT/Electrical activity analysis/SARS-COV-2"
 
 STACHEL = os.path.join(DISK, "Organoids/Willy 3/+ Stachel/")
 NOSTACHEL = os.path.join(DISK, "Organoids/Willy 3/- Stachel/")

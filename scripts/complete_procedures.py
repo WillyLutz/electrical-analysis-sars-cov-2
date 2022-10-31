@@ -107,9 +107,9 @@ def impact_of_stachel_on_classification_performance():
     path = os.path.join(P.RESULTS, "Stachel results.xlsx")
     df = pd.read_excel(path, index_col=False)
 
-    recording = ["T=0MIN", "T=30MIN", "T=24H"]
+    recording = ["T=0MIN", "T=30MIN", "T=24H", ]
     recording_idx = [x for x in range(len(recording))]
-    stachel = ["None", "T=0MIN", "T=24H"]
+    stachel = ["None", "T=0MIN", "T=24H", "T=24H+TTX"]
     stachel_idx = [x for x in range(len(stachel))]
     fig, axes = plt.subplots(len(recording), len(stachel), figsize=(4 * len(recording), 5 * len(stachel)))
 
@@ -151,13 +151,13 @@ def impact_of_stachel_on_classification_performance():
                 # -----------------------------------------------
                 axes[r, s].set_axisbelow(True)
                 axes[r, s].yaxis.grid(color='black', linestyle='dotted', alpha=0.7)
-                axes[r, s].set_xticks([0, 1, 2], ["Model accuracy", "Infected", "Not infected"])
+                axes[r, s].set_xticks([0, 1, 2], ["Model acc.", "INF", "NI"])
                 axes[r, s].set_aspect("auto")
                 axes[r, s].plot([], [], ' ', label="CUP: Confidence upon prediction")
                 if s == 0:
                     axes[r, s].set_ylabel("Prediction ratio")
 
-    cols = ["Stachel: None", "Stachel: T=0MIN", "Stachel: T=24H"]
+    cols = ["Stachel: None", "Stachel: T=0MIN", "Stachel: T=24H", "Stachel: T=24H+TTX"]
     rows = ["Recording:\nT=0MIN", "Recording:\nT=30MIN", "Recording:\nT=24H"]
     pad = 5
     for ax, col in zip(axes[0], cols):
