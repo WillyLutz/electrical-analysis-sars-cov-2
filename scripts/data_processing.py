@@ -6,7 +6,7 @@ import pandas as pd
 import signal_processing as spr
 import numpy as np
 import machine_learning as ml
-from firelib.firelib import firefiles as ff
+import fiiireflyyy.firefiles as ff
 import PATHS as P
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -26,7 +26,7 @@ def make_highest_features_dataset_from_complete_dataset(foi, complete_dataset, p
     :return: dataframe of interest
     """
     df_foi = complete_dataset[[f for f in foi]]
-    df_foi["status"] = complete_dataset["status"]
+    df_foi["label"] = complete_dataset["label"]
     if save:
         df_foi.to_csv(os.path.join(os.path.dirname(complete_dataset), f"highest {percentage * 100}% features - "
                                                                       f"{os.path.basename(complete_dataset)}"),
@@ -54,7 +54,7 @@ def make_raw_frequency_plots_from_pr_files(parent_dir, to_include=(), to_exclude
     print(number_of_organoids, organoids)
     columns = list(range(0, 300))
     dataset = pd.DataFrame(columns=columns)
-    target = pd.DataFrame(columns=["status", ])
+    target = pd.DataFrame(columns=["label", ])
 
     n_processed_files = 0
     infected_organoids = []
@@ -134,11 +134,13 @@ def make_raw_frequency_plots_from_pr_files(parent_dir, to_include=(), to_exclude
     #     n_processed_files += 1
 
 
-def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude=(), save=False, verbose=False):
+def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude=(), save=False, verbose=False,
+                                 separate_organoids=False, label_comment=""):
     """
     Use frequency files of format two columns (one column 'Frequencies [Hz]' and one column 'mean') to generate a
     dataset used for classification.
 
+    :param separate_organoids:
     :param to_exclude:
     :param to_include:
     :param timepoint: The time point to study.
@@ -155,7 +157,7 @@ def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude
         print("added: ", freq_files)
     columns = list(range(0, 300))
     dataset = pd.DataFrame(columns=columns)
-    target = pd.DataFrame(columns=["status", ])
+    target = pd.DataFrame(columns=["label", ])
 
     n_processed_files = 0
     for f in freq_files:
@@ -168,16 +170,22 @@ def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude
 
         path = Path(f)
         if "NI" in os.path.basename(path.parent.parent):
-            target.loc[len(target)] = 0
+            if separate_organoids:
+                target.loc[len(target)] = "NI"+str(os.path.basename(path.parent)) + label_comment
+            else:
+                target.loc[len(target)] = "NI" + label_comment
         elif "INF" in os.path.basename(path.parent.parent):
-            target.loc[len(target)] = 1
+            if separate_organoids:
+                target.loc[len(target)] = "INF"+str(os.path.basename(path.parent)) + label_comment
+            else:
+                target.loc[len(target)] = "INF" + label_comment
 
         if verbose:
             progress = int(np.ceil(n_processed_files / len(freq_files) * 100))
             sys.stdout.write(f"\rProgression of processing files: {progress}%")
             sys.stdout.flush()
             n_processed_files += 1
-    dataset["status"] = target["status"]
+    dataset["label"] = target["label"]
     if verbose:
         print("\n")
     if save:
@@ -231,7 +239,7 @@ def make_filtered_numbered_freq_files(mono_time, top_n=35, truncate=30, n_featur
 
     dataset = pd.DataFrame(columns=columns)
     identities = pd.DataFrame(columns=["organoid number", ])
-    target = pd.DataFrame(columns=["status", ])
+    target = pd.DataFrame(columns=["label", ])
     for f in files:
         if "pr_" in f:
             paths_pr.append(f)
@@ -270,7 +278,7 @@ def make_filtered_numbered_freq_files(mono_time, top_n=35, truncate=30, n_featur
                     target.loc[len(target)] = 1
 
     dataset.insert(loc=0, column="organoid number", value=identities["organoid number"])
-    dataset["status"] = target["status"]
+    dataset["label"] = target["label"]
     folder = "Four organoids\\datasets\\"
     ff.verify_dir(folder)
     title = f"{folder}filtered_{lowcut}_numbered_frequency_top{str(top_n)}_nfeatures_{n_features}_{mono_time}.csv"

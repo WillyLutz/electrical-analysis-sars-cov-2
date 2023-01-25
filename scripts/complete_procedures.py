@@ -11,7 +11,7 @@ import numpy as np
 import machine_learning as ml
 import matplotlib.pyplot as plt
 import statistics
-from firelib.firelib import firefiles as ff
+import fiiireflyyy.firefiles as ff
 import data_analysis as dan
 from random import randint
 import get_plots as gp

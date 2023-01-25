@@ -15,7 +15,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import data_processing as dpr
 import data_analysis as dan
-from firelib.firelib import firefiles as ff
+import fiiireflyyy.firefiles as ff
 import PATHS as P
 import sys
 

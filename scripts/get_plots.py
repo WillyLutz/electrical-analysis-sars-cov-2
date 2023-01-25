@@ -25,7 +25,7 @@ from sklearn import preprocessing
 import complete_procedures as cp
 import PATHS as P
 import data_processing as dp
-from firelib.firelib import firefiles as ff
+import fiiireflyyy.firefiles as ff
 
 
 def scores_heatmap(report_paths, title):
