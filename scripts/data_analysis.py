@@ -257,6 +257,7 @@ def count_spikes_by_std_all_channels(df, threshold):
 
     return np.mean(all_channels_spikes)
 
+
 def count_spikes_and_channel_std_by_std_all_channels(df, threshold):
     channels = df.columns
     all_channels_spikes = []

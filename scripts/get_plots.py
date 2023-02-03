@@ -57,99 +57,6 @@ def scores_heatmap(report_paths, title):
     plt.savefig(f"Four organoids\\figures\\testing scores {title}.png")
 
 
-def features_importance_std_spikes3_randlabel_n_iterations(model_paths, save=False, title="", stacked=True):
-    stds = []
-    spikes = []
-    randoms = []
-    times = ["T=0", "T=30MIN", "T=24H"]
-    std = []
-    for model_path in model_paths:
-        record_time = model_path.split("\\")[2].split("_")[4]
-        model = ml.load_model(model_path)
-        importances = model.feature_importances_
-        std.append(np.std([tree.feature_importances_ for tree in model.estimators_], axis=0))
-
-        forest_importances = pd.Series(importances, index=range(0, 3))
-        stds.append(forest_importances[0])
-        spikes.append(forest_importances[1])
-        randoms.append(forest_importances[2])
-    print(std)
-
-    stds_std = []
-    for s in std:
-        stds_std.append(s[0])
-    spikes_std = []
-    for s in std:
-        spikes_std.append(s[1])
-    randoms_std = []
-    for s in std:
-        randoms_std.append(s[2])
-    bot = [x + y for x, y in zip(spikes, randoms)]
-
-    if stacked:
-        plt.bar(times, stds, bottom=bot, color="lightgray", label="std", yerr=np.mean(stds_std))
-        plt.bar(times, spikes, color="darkgray", bottom=randoms, label="spikes count t=3", yerr=np.mean(spikes_std))
-        plt.bar(times, randoms, color="dimgray", label="random feature", yerr=np.mean(randoms_std))
-    else:
-        plt.bar(times, stds, color="lightgray", label="std", yerr=np.mean(stds_std))
-        plt.bar(times, spikes, color="darkgray", label="spikes count t=3", yerr=np.mean(spikes_std))
-        plt.bar(times, randoms, color="dimgray", label="random feature", yerr=np.mean(randoms_std))
-
-    if stacked:
-        title = title + " stacked"
-    plt.title(title)
-    plt.legend(bbox_to_anchor=(0.5, 1.0), loc='upper left')
-    if save:
-        plt.savefig("Four organoids\\figures\\" + title)
-    else:
-        plt.show()
-
-    # forest_importances.plot.bar(ax=ax)
-    # ax.set_title("Feature importances using MDI - " + str(path.split("\\")[-2]))
-    # ax.set_ylabel("Mean decrease in impurity")
-    # plt.tight_layout()
-    # plt.savefig("figures/features_importance_std_spikes3_randlabel")
-
-
-def features_importance_std_spikes3_randlabel(save=False, title=""):
-    model_paths = ["Two organoids/ml_models/std_range_spikes_min3_max3_step1_top35_t=0_randLabel_True/rfc1000.sav",
-                   "Two organoids/ml_models/std_range_spikes_min3_max3_step1_top35_t=30 min_randLabel_True/rfc1000.sav",
-                   "Two organoids/ml_models/std_range_spikes_min3_max3_step1_top35_t=24 h_randLabel_True/rfc1000.sav", ]
-
-    stds = []
-    spikes = []
-    randoms = []
-    times = ["t=0", "t=30 min", "t=24 h"]
-    for model_path in model_paths:
-        record_time = model_path.split("/")[2].split("_")[7]
-        model = ml.load_model(model_path)
-        importances = model.feature_importances_
-        std = np.std([tree.feature_importances_ for tree in model.estimators_], axis=0)
-
-        forest_importances = pd.Series(importances, index=range(0, 3))
-        stds.append(forest_importances[0])
-        spikes.append(forest_importances[1])
-        randoms.append(forest_importances[2])
-
-    bot = [x + y for x, y in zip(spikes, randoms)]
-    plt.bar(times, stds, bottom=bot, color="silver", label="std")
-    plt.bar(times, spikes, color="gray", bottom=randoms, label="spikes count t=3")
-    plt.bar(times, randoms, color="black", label="random feature")
-
-    plt.title(title)
-    plt.legend(bbox_to_anchor=(0.5, 1.0), loc='upper left')
-    if save:
-        plt.savefig("figures/" + title)
-    else:
-        plt.show()
-
-    # forest_importances.plot.bar(ax=ax)
-    # ax.set_title("Feature importances using MDI - " + str(path.split("\\")[-2]))
-    # ax.set_ylabel("Mean decrease in impurity")
-    # plt.tight_layout()
-    # plt.savefig("figures/features_importance_std_spikes3_randlabel")
-
-
 def frequencies_cov_ni_separated_organoids(mono_time):
     fig, ax = plt.subplots()
 
@@ -210,7 +117,7 @@ def frequencies_cov_ni_separated_organoids(mono_time):
     plt.show()
 
 
-def frequencies_cov_ni(mono_time):
+def frequencies_cov_ni(mono_time, ):
     top_n = 35
     truncate = 30
 

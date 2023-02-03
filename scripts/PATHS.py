@@ -8,6 +8,7 @@ RESULTS = os.path.join(DISK, "Organoids/Willy 3/RESULTS/")
 MODELS = os.path.join(DISK, "Organoids/Willy 3/MODELS/")
 DATASETS = os.path.join(DISK, "Organoids/Willy 3/DATASETS/")
 FOUR_ORGANOIDS = os.path.join(DISK, "Organoids/four organoids per label/")
+FIGURES_PAPER = os.path.join(DISK, RESULTS, "Figures Paper")
 
 CHANNELS = ["TimeStamp [µs]", "47 (ID=0) [pV]", "48 (ID=1) [pV]", "46 (ID=2) [pV]", "45 (ID=3) [pV]", "38 (ID=4) [pV]",
             "37 (ID=5) [pV]", "28 (ID=6) [pV]", "36 (ID=7) [pV]", "27 (ID=8) [pV]", "17 (ID=9) [pV]", "26 (ID=10) [pV]",

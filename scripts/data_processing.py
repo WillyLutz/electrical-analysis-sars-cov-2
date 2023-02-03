@@ -16,6 +16,123 @@ def concatenate_datasets():
     print()
 
 
+def discard_outliers_by_iqr(df: pd.DataFrame, **kwargs):
+    """
+    remove outliers from a dataframe using the interquartile range method.
+
+        Parameters
+        ----------
+        df: pd.Dataframe
+            the dataframe containing the data.
+            Must contain a column 'label'.
+
+        **kwargs: keyword arguments
+            low_percentile : float, default: 0.25
+                the low percentile for IQR outliers removal.
+            high_percentile : float, default: 0.75
+                the high percentile for IQR outliers removal.
+            iqr_limit_factor : float, default: 1.5
+                the factor used to determine when the point is
+                an outlier compared to the percentiles.
+            show: bool, default: False
+                Whether to show the resulting plot or not.
+                WARNING: may cause randomly 'Key error: O'.
+            save: str, default: ""
+                Where to save the resulting plot.
+                If empty, the plot will not be saved.
+                WARNING : may cause randomly 'Key error: 0'.
+            mode: {'capping', 'trimming'}, default: capping
+                The method used to discard the outliers.
+
+        Returns
+        -------
+        out: pd.Dataframe
+            the dataframe without the outliers
+    """
+    options = {"low_percentile": 0.25,
+               "high_percentile": 0.75,
+               "iqr_limit_factor": 1.5,
+               "show": False,
+               "save": "",
+               "mode": "capping"}
+    options.update(kwargs)
+    labels = list(set(list(df["label"])))
+    labels_values = {}
+    for n in range(len(labels)):
+        labels_values[labels[n]] = n
+
+    features = list(df.columns.values)
+    features.remove('label')
+    metrics = np.empty(shape=(len(labels), len(features)), dtype=object)
+
+    # obtaining the metrics [lower_limit, upper_limit]
+    for i_label in range(len(labels)):
+        label = labels[i_label]
+        sub_df = df.loc[df['label'] == label]
+        for i_feat in range(len(features)):
+            feat = features[i_feat]
+            # finding the iqr
+            low_percentile = sub_df[feat].quantile(options["low_percentile"])
+            high_percentile = sub_df[feat].quantile(options["high_percentile"])
+            iqr = high_percentile - low_percentile
+            # finding upper and lower limit
+            lower_limit = low_percentile - options["iqr_limit_factor"] * iqr
+            upper_limit = high_percentile + options["iqr_limit_factor"] * iqr
+            metrics[i_label][i_feat] = [lower_limit, upper_limit]
+
+    discarded_df = pd.DataFrame(columns=features)
+    discarded_labels = pd.DataFrame(columns=["label", ])
+
+    for i in range(len(df.values)):
+        discarded_row = []
+        discarded_label = df['label'].iloc[i]
+        for j in range(len(df.values[i]) - 1):
+            lower_limit, upper_limit = metrics[labels_values[discarded_label], j]
+            if options["mode"] == "capping":
+                if df.iloc[i, j] > upper_limit:
+                    discarded_row.append(upper_limit)
+                elif df.iloc[i, j] < lower_limit:
+                    discarded_row.append(lower_limit)
+                else:
+                    discarded_row.append(df.iloc[i, j])
+
+            elif options["mode"] == "trimming":
+                if lower_limit < df.iloc[i, j] < upper_limit:
+                    discarded_row.append(df.iloc[i, j])
+                else:
+                    discarded_row.append(np.nan)  # todo: how to manage ? (not the same amount of values)
+        discarded_labels.loc[len(discarded_labels)] = discarded_label
+        discarded_df.loc[len(discarded_df)] = discarded_row
+        #     if options["save"] or options["show"]:
+        #         fig, axes = plt.subplots(2, 2, gridspec_kw={'height_ratios': [3, 1]}, figsize=(8, 6))
+        #         sns.distplot(sub_df[feat], ax=axes[0, 0])
+        #         axes[0, 0].set_ylabel("Density")
+        #         axes[0, 0].set_xlabel("Amplitude [pV]")
+        #         axes[0, 0].set_title("Before outliers removal")
+        #         sns.distplot(modified_df[feat], ax=axes[0, 1])
+        #         axes[0, 1].set_ylabel("Density")
+        #         axes[0, 1].set_xlabel("Amplitude [pV]")
+        #         axes[0, 1].set_title("After outliers removal")
+        #         sns.boxplot(data=sub_df[feat], orient="h", ax=axes[1, 0])
+        #
+        #         sns.boxplot(data=modified_df[feat], orient="h", ax=axes[1, 1])
+        #
+        #         title = f"Feature {feat} distribution, label {label}"
+        #         plt.suptitle(title)
+        #         plt.tight_layout()
+        #         if options["save"]:
+        #             plt.savefig(os.path.join(options["save"], title + ".png"), dpi=500)
+        #         if options["show"]:
+        #             plt.show()
+        #         plt.close()
+        #
+        #     sub_df[feat] = modified_df[feat]
+        #     sub_df["label"] = modified_df["label"]
+        # label_specific_dfs.append(sub_df)
+    discarded_df["label"] = discarded_labels["label"]
+    return discarded_df
+
+
 def make_highest_features_dataset_from_complete_dataset(foi, complete_dataset, percentage=0.05, save=False):
     """
     Extract columns corresponding to features of interest from a complete dataset and saves/returns it.
@@ -135,7 +252,8 @@ def make_raw_frequency_plots_from_pr_files(parent_dir, to_include=(), to_exclude
 
 
 def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude=(), save=False, verbose=False,
-                                 separate_organoids=False, label_comment=""):
+                                 separate_organoids=False, select_organoids=False, target_keys=None, label_comment="",
+                                 freq_range=()):
     """
     Use frequency files of format two columns (one column 'Frequencies [Hz]' and one column 'mean') to generate a
     dataset used for classification.
@@ -147,11 +265,16 @@ def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude
     :param title: name of the resulting dataset.
     :param parent_dir: name of the parent directory that contains all files to make the dataset from.
     :return:
-    """
+    """  # todo : update on other projects
+    if select_organoids is False:
+        select_organoids = [1, 2, 3, 4, 5, 6, 7]
+    if target_keys is None:
+        target_keys = {'NI': 0, 'INF': 1}
     files = ff.get_all_files(os.path.join(parent_dir))
     freq_files = []
     for f in files:
-        if all(i in f for i in to_include) and (not any(e in f for e in to_exclude)):
+        if all(i in f for i in to_include) and (not any(e in f for e in to_exclude)) and int(
+                os.path.basename(Path(f).parent)) in select_organoids:
             freq_files.append(f)
     if verbose:
         print("added: ", freq_files)
@@ -162,6 +285,9 @@ def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude
     n_processed_files = 0
     for f in freq_files:
         df = pd.read_csv(f)
+        if freq_range:
+            # selecting the frequencies range
+            df = df.loc[(df["Frequency [Hz]"] >= freq_range[0]) & (df["Frequency [Hz]"] <= freq_range[1])]
         # Downsampling by n
         downsampled_df = down_sample(df["mean"], 300, 'mean')
 
@@ -169,14 +295,15 @@ def make_dataset_from_freq_files(parent_dir, title="", to_include=(), to_exclude
         dataset.loc[len(dataset)] = downsampled_df
 
         path = Path(f)
+
         if "NI" in os.path.basename(path.parent.parent):
             if separate_organoids:
-                target.loc[len(target)] = "NI"+str(os.path.basename(path.parent)) + label_comment
+                target.loc[len(target)] = "NI" + str(os.path.basename(path.parent)) + label_comment
             else:
                 target.loc[len(target)] = "NI" + label_comment
         elif "INF" in os.path.basename(path.parent.parent):
             if separate_organoids:
-                target.loc[len(target)] = "INF"+str(os.path.basename(path.parent)) + label_comment
+                target.loc[len(target)] = "INF" + str(os.path.basename(path.parent)) + label_comment
             else:
                 target.loc[len(target)] = "INF" + label_comment
 
