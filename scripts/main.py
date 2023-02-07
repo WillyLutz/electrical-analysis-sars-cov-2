@@ -43,10 +43,9 @@ def send_telegram_notification(text):
 
 
 def main():
-    for freqs in ((0,300), (300, 5000), (0, 5000)):
-        for batch in ["batch 2", ]:
-            cp.fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(freqs[0], freqs[1], batch=batch)
-    send_telegram_notification("time to come back...")
+    for batch in ["batch 2", ]:
+        for freq in ((0, 300),(300, 5000),(0, 5000), ):
+            cp.fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(freq[0], freq[1], batch)
 
 
 main()

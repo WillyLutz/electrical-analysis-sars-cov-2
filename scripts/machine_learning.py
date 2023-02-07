@@ -185,6 +185,8 @@ def plot_pca(dataframe: pd.DataFrame, **kwargs): # todo: to fiiireflyyy
     title: str, optional, defualt: ""
         The filename of the resulting plot. If empty,
         an automatic name will be generated.
+    ratios: tuple of float, optional, default: ()
+        the PCA explained variance ratio
     """
 
     options = {
@@ -195,9 +197,11 @@ def plot_pca(dataframe: pd.DataFrame, **kwargs): # todo: to fiiireflyyy
         'metrics': False,
         'savedir': "",
         'pc_ratios': [],
-        'title': ""
+        'title': "",
+        'ratios': ()
 
     }
+
     options.update(kwargs)
     targets = (sorted(list(set(dataframe["label"]))))
     colors = ['g', 'b','r', 'k', 'sandybrown', 'deeppink', 'gray']
@@ -209,12 +213,12 @@ def plot_pca(dataframe: pd.DataFrame, **kwargs): # todo: to fiiireflyyy
     label_params = {'fontsize': 30, "labelpad": 8}
     ticks_params = {'fontsize': 30, }
     if options['n_components'] == 2:
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        fig, ax = plt.subplots(1, 1, figsize=(12, 10))
 
         plt.xticks(**ticks_params)
         plt.yticks(**ticks_params)
-        xlabel = 'Principal Component-1'
-        ylabel = 'Principal Component-2'
+        xlabel = f'Principal Component-1 ({options["ratios"][0]}%)'
+        ylabel = f'Principal Component-2 ({options["ratios"][1]}%)'
         if len(options['pc_ratios']):
             xlabel += f" ({round(options['pc_ratios'][0] * 100, 2)}%)"
             ylabel += f" ({round(options['pc_ratios'][1] * 100, 2)}%)"
@@ -245,9 +249,9 @@ def plot_pca(dataframe: pd.DataFrame, **kwargs): # todo: to fiiireflyyy
         plt.figure(figsize=(10, 10))
         ax = plt.axes(projection='3d')
 
-        xlabel = 'Principal Component-1'
-        ylabel = 'Principal Component-2'
-        zlabel = 'Principal Component-3'
+        xlabel = f'Principal Component-1 ({options["ratios"][0]}%)'
+        ylabel = f'Principal Component-2 ({options["ratios"][1]}%)'
+        zlabel = f'Principal Component-3 ({options["ratios"][2]}%)'
         if len(options['pc_ratios']):
             xlabel += f" ({round(options['pc_ratios'][0] * 100, 2)}%)"
             ylabel += f" ({round(options['pc_ratios'][1] * 100, 2)}%)"

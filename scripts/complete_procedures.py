@@ -18,7 +18,8 @@ import get_plots as gp
 from sklearn.model_selection import train_test_split, KFold, cross_val_score
 
 
-def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(min_freq=0, max_freq=500, batch="all organoids"):
+def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(min_freq=0, max_freq=500,
+                                                                                 batch="all organoids"):
     show = False
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
@@ -53,19 +54,18 @@ def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids
                                                high_percentile=1 - percentiles,
                                                mode='capping')
 
-    stachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                           to_include=("freq_50hz_sample", "T=24H"),
-                                           to_exclude=("TTX", "STACHEL", "NI"),
-                                           verbose=False,
-                                           save=False,
-                                           select_organoids=batches["batch 2"],
-                                           separate_organoids=False,
-                                           freq_range=(min_freq, max_freq),
-                                           label_comment="")
-
-    discarded_stachel = dpr.discard_outliers_by_iqr(stachel, low_percentile=percentiles,
-                                                high_percentile=1 - percentiles,
-                                                mode='capping')
+    cov_stachel = dpr.make_dataset_from_freq_files(parent_dir=P.STACHEL,
+                                                   to_include=("freq_50hz_sample", "T=24H",),
+                                                   to_exclude=("TTX", "NI"),
+                                                   verbose=False,
+                                                   freq_range=(min_freq, max_freq),
+                                                   save=False,
+                                                   separate_organoids=False,
+                                                   label_comment=""
+                                                   )
+    discarded_stachel = dpr.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                    high_percentile=1 - percentiles,
+                                                    mode='capping')
 
     discarded_ni.replace("NI", "Mock", inplace=True)
     discarded_cov.replace("INF", "SARS-CoV-2", inplace=True)
@@ -90,13 +90,15 @@ def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids
     stachel_region = stachel_df.loc[:, stachel_df.columns != "label"]
     plt.bar(2, np.mean(np.array(stachel_region)), color='gray',
             yerr=np.std(np.array(stachel_region)))
-    data.loc[len(data)] = ["Stachel-treated SARS-CoV-2", np.mean(np.array(stachel_region)), np.std(np.array(stachel_region))]
+    data.loc[len(data)] = ["Stachel-treated SARS-CoV-2", np.mean(np.array(stachel_region)),
+                           np.std(np.array(stachel_region))]
 
     plt.xticks([0, 1, 2], ["Mock", "SARS-CoV-2", "Stachel-treated SARS-CoV-2"], rotation=7, fontsize=20)
     plt.ylabel("Mean amplitude [pV]", fontsize=25)
 
     plt.savefig(
-        os.path.join(P.FIGURES_PAPER, f"Fig2c Amplitude for Mock,CoV in {min_freq}-{max_freq} Hz at T=24H for {batch}.png"),
+        os.path.join(P.FIGURES_PAPER,
+                     f"Fig2c Amplitude for Mock,CoV in {min_freq}-{max_freq} Hz at T=24H for {batch}.png"),
         dpi=1200)
     data.to_csv(
         os.path.join(P.FIGURES_PAPER,
@@ -110,7 +112,7 @@ def fig2b_Smoothened_frequencies_regionHz_Mock_CoV_Stachel_on_batch(min_freq=0, 
     percentiles = 0.1
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
     percentiles = 0.1
-    show=False
+    show = True
     cov_nostachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                      to_include=("freq_50hz_sample", "T=24H"),
                                                      to_exclude=("TTX", "STACHEL", "NI"),
@@ -233,13 +235,14 @@ def fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(min_freq, max_
     discarded_covni_stachel.replace("NI", "Stachel-treated Mock", inplace=True)
     discarded_covni_stachel.replace("INF", "Stachel-treated SARS-CoV-2", inplace=True)
 
-    pca, pcdf, _ = fl.fit_pca(discarded_covni, n_components=n_components)
+    pca, pcdf, ratios = fl.fit_pca(discarded_covni, n_components=n_components)
     stachel_pcdf = fl.apply_pca(pca, discarded_covni_stachel)
     global_df = pd.concat([pcdf, stachel_pcdf], ignore_index=True)
 
+    rounded_ratio = [round(r * 100, 1) for r in ratios]
     ml.plot_pca(global_df, n_components=2, show=False,
                 title=f"Fig2a PCA on {min_freq}-{max_freq}Hz {batch} for Mock,CoV, applied on stachel",
-                points=True, metrics=True, savedir=P.FIGURES_PAPER, )
+                points=True, metrics=True, savedir=P.FIGURES_PAPER, ratios=rounded_ratio)
 
 
 def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, max_freq=5000,
@@ -338,9 +341,10 @@ def fig1f_PCA_on_regionHz_all_organoids_for_Mock_CoV(min_freq, max_freq, batch="
     discarded_covni.replace("NI", "Mock", inplace=True)
     discarded_covni.replace("INF", "SARS-CoV-2", inplace=True)
 
-    pca, pcdf, _ = fl.fit_pca(discarded_covni, n_components=n_components)
+    pca, pcdf, ratio = fl.fit_pca(discarded_covni, n_components=n_components)
+    rounded_ratio = [round(r * 100, 1) for r in ratio]
     ml.plot_pca(pcdf, n_components=2, show=False, title=f"Fig1f PCA on {min_freq}-{max_freq}Hz {batch} for Mock,CoV",
-                points=True, metrics=True, savedir=P.FIGURES_PAPER, )
+                points=True, metrics=True, savedir=P.FIGURES_PAPER, ratios=rounded_ratio)
 
 
 def fig1e_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=0, max_freq=500, train_batch="all organoids",
