@@ -21,7 +21,15 @@ This project is developed in the context of public research in biology. It has b
 publication <ins>_**put publication reference**_</ins>.
 
 ## Visuals and resulting figures
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2b%20Zoom%20in%200-500Hz.png" width=250 height=250>
+On this part you will have a quick overview on the different resulting figures possible with this project. They will be given without context and are for illustration purpose only, and may not be relevant with the actual article this github is from.
+
+### Frequency/power plots
+<img src="[https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2b%20Zoom%20in%200-500Hz.png](https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2b%20Smoothened%20frequencies%20Mock-CoV-Stachel%20on%200-5000Hz%20batch%202.png)" width=250 height=250>
+
+### 2D PCA plot
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2a%20PCA%20on%20300-5000Hz%20batch%202%20for%20Mock%2CCoV%2C%20applied%20on%20stachel.png" width=250 height=250>
+
+### 3D PCA plot
 
 ## Data acquisition
 The signal has been recorded at 10000 Hz, with a MEA 60 channels electrode. 
