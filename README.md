@@ -2,11 +2,8 @@
 
 todo:
 - [ ] [visuals](#visuals-and-resulting-figures)
-- [ ] [installation](#installation)
 - [ ] [data acquisition](#data-acquisition)
-- [ ] [data formatting](#data-formatting)
 - [ ] [usage exemples](#usage)
-- [ ] [licence](#licence)
 
 ## Description
 Its aim is to provide signal processing and machine learning solutions for electrical signal analysis. 
@@ -26,9 +23,6 @@ publication <ins>_**put publication reference**_</ins>.
 ## Visuals and resulting figures
 <img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2b%20Zoom%20in%200-500Hz.png" width=250 height=250>
 
-## Installation
-This project has been developed under Linux-Ubuntu system, and has not been tested on other systems. It may work on other systems however.
-
 ## Data acquisition
 The signal has been recorded at 10000 Hz, with a MEA 60 channels electrode. 
 For more information about the array, refer to [their page (add link)](#data-formatting). Each recording has been done 3 times,
@@ -36,7 +30,8 @@ on a minimum of 3 organoids per test batch.
 
 
 ## Data formatting 
-For most (if not all) of the analysis, a certain data format will be needed.
+For most (if not all) of the analysis, a certain data format will be needed. Any modification on the data format may 
+induce errors and bugs for the good use of the project.
 
 
 ### Project organization
@@ -87,10 +82,37 @@ Across all the analysis, multiple data type will be generated. For all the files
 different conditions of this very data in the file name.
 
 #### Raw file
+Usually of format similar as following:
+
 ```2022-09-16T14-02-25t=24h NI1 STACHEL_D-00145_Recording-0_(Data Acquisition (1);MEA2100-Mini; Electrode Raw Data1)_Analog.csv```
+
+This type of file contains the raw output in csv format of the electrode array. It may look as following:
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/sshot%20raw%20file%20sarscov.png" width=950 heigth=320>
+
+#### Processed format
+Usually of format similar as following: 
+```pr_2022-09-16T14-03-55.csv```
+
+In fact it is equivalent to the raw file with only th data (beheaded of the information headlines).
+It may look like:
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/sshot%20pr%20file%20sarscov.png" width=950 heigth=230>
+
+The column headers are normalized to function with the project. Other headers will not function without modifying directly the code.
+
+#### Frequencies format
+Usually a format similar as following: 
+```freq_50hz_sample29_2022-09-16T14-05-24.csv```
+
+It is the result of the Fast Fourier Transform applied on the average signal across the channels (after channel selection) from the processed files. It mayt look like this:
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/sshot%20freq%20file%20sarscov.png" width=200 heigth=300>
+
+The column headers 'mean' and 'Frequency [Hz]' are normalized to function with the project. Other headers will not function without modifying directly the code.
 
 ## Development specification
 Language: Python 3.10
+
 OS: Ubuntu 22.04.1 LTS
 
 ## Usage
@@ -111,7 +133,29 @@ Principal investigator: Raphaël Gaudin
 Context: MDV Team, IRIM, CNRS, Montpellier 34000, France.
 
 ## License
-For open source projects, say how it is licensed.
+This open source project is under the MIT Licence.
+
+MIT License
+
+Copyright (c) [2023] [Electrical signal analysis : SARS-CoV-2 infected organoids]
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Project status
 on going
