@@ -1,10 +1,5 @@
 # Electrical signal analysis : SARS-CoV-2 infected organoids
 
-todo:
-- [ ] [visuals](#visuals-and-resulting-figures)
-- [ ] [data acquisition](#data-acquisition)
-- [ ] [usage exemples](#usage)
-
 ## Description
 Its aim is to provide signal processing and machine learning solutions for electrical signal analysis. 
 In this specific case it has been used on human brain organoids. It allows the user to use different analysis and 
@@ -21,20 +16,46 @@ This project is developed in the context of public research in biology. It has b
 publication <ins>_**put publication reference**_</ins>.
 
 ## Visuals and resulting figures
-On this part you will have a quick overview on the different resulting figures possible with this project. They will be given without context and are for illustration purpose only, and may not be relevant with the actual article this github is from.
+On this part you will have a quick overview on the different resulting figures possible with this project. They will be given without context and are for 
+illustration purpose only, and may not be relevant with the actual article this github is from.
 
 ### Frequency/power plots
-<img src="[https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2b%20Zoom%20in%200-500Hz.png](https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2b%20Smoothened%20frequencies%20Mock-CoV-Stachel%20on%200-5000Hz%20batch%202.png)" width=250 height=250>
+Plot your signal in the frequency domain.
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/smoothened frequencies.png" width=250 height=250>
+
+### Amplitude barplot
+Compute the average power and variation of different labels. Allows a restriction to a specific frequency range.
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/barplot amplitude.png" width=250 height=250>
 
 ### 2D PCA plot
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/Fig2a%20PCA%20on%20300-5000Hz%20batch%202%20for%20Mock%2CCoV%2C%20applied%20on%20stachel.png" width=250 height=250>
+Fit a Principal Component Analysis on you data and plot it in a two-dimensionnal space. You can also decide to fit the
+model only on a few label, then apply the transformation to another !
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/pca 2D.png" width=250 height=250>
 
 ### 3D PCA plot
+Fit a Principal Component Analysis on you data and plot it in a three-dimensionnal space. You can also decide to fit the
+model only on a few label, then apply the transformation to another !
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/PCA 3D.png" width=250 height=250>
+
+### Confusion matrix
+Used to check the performance of a machine learning model, here Random Forest Classifier. You can train on specific label
+and test you model on different ones, to see where the model classify them among the training labels.
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/confusion matrix.png" width=600 height=200>
+
+### Feature importance
+Plot the relative importance of the features for a trained RFC model.
+
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures/feature importance.png" width=250 height=250> 
 
 ## Data acquisition
-The signal has been recorded at 10000 Hz, with a MEA 60 channels electrode. 
-For more information about the array, refer to [their page (add link)](#data-formatting). Each recording has been done 3 times,
-on a minimum of 3 organoids per test batch.
+The signal has been recorded at 10 kHz, with a MEA 60 channels electrode. 
+For more information about the array, refer to [their page](https://www.multichannelsystems.com/systems/mea2100-mini-60-system). Each recording has been 
+done 3 times,on a minimum of 3 organoids per test batch.
 
 
 ## Data formatting 
@@ -124,7 +145,15 @@ Language: Python 3.10
 OS: Ubuntu 22.04.1 LTS
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+This part will help you getting started with the use of this project. 
+
+### The PATHS.py file
+After succesfully cloning the repository as an IDE project, the first thing you want to do is to modify the constants used for this project, such as the absolute paths. 
+
+Go to the file `PATHS.py`.
+
+
+
 
 ## Support
 For any support request, you can either use this project issue tracker, or state your request at <willy.lutz@irim.cnrs.fr> 
