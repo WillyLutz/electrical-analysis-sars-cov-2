@@ -17,7 +17,6 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 import pandas as pd
 import matplotlib.pyplot as plt
 import data_processing as dpr
-import data_analysis as dan
 import fiiireflyyy.firelearn as fl
 import fiiireflyyy.firefiles as ff
 import PATHS as P
@@ -159,125 +158,6 @@ def get_features_of_interest_from_trained_model(clf, percentage=0.05):
 
     return idx_foi
 
-def plot_pca(dataframe: pd.DataFrame, **kwargs): # todo: to fiiireflyyy
-    """
-    plot the result of PCA.
-
-    Parameters
-    ----------
-    dataframe: DataFrame
-        The data to plot. Must contain a 'label' column.
-    n_components: int, optional, default: 2
-        Number of principal components. Also, teh dimension
-        of the graph. Must be equal to 2 or 3.
-    show: bool, optional, default: True
-        Whether to show the plot or not.
-    save: bool, optional, default: False
-        Whether to save the plot or not.
-    commentary: str, optional, default: "T=48H"
-        Any specification to include in the file name while saving.
-    points: bool, optional, default: True
-        whether to plot the points or not.
-    metrics: bool, optional, default: False
-        Whether to plot the metrics or not
-    savedir: str, optional, default: ""
-        Directory where to save the resulting plot, if not empty.
-    title: str, optional, defualt: ""
-        The filename of the resulting plot. If empty,
-        an automatic name will be generated.
-    ratios: tuple of float, optional, default: ()
-        the PCA explained variance ratio
-    """
-
-    options = {
-        'n_components': 2,
-        'show': True,
-        'commentary': "",
-        'points': True,
-        'metrics': False,
-        'savedir': "",
-        'pc_ratios': [],
-        'title': "",
-        'ratios': ()
-
-    }
-
-    options.update(kwargs)
-    targets = (sorted(list(set(dataframe["label"]))))
-    colors = ['g', 'b','r', 'k', 'sandybrown', 'deeppink', 'gray']
-    if len(targets) > len(colors):
-        n = len(targets) - len(colors) + 1
-        for i in range(n):
-            colors.append('#%06X' % randint(0, 0xFFFFFF))
-
-    label_params = {'fontsize': 30, "labelpad": 8}
-    ticks_params = {'fontsize': 30, }
-    if options['n_components'] == 2:
-        fig, ax = plt.subplots(1, 1, figsize=(12, 10))
-
-        plt.xticks(**ticks_params)
-        plt.yticks(**ticks_params)
-        xlabel = f'Principal Component-1 ({options["ratios"][0]}%)'
-        ylabel = f'Principal Component-2 ({options["ratios"][1]}%)'
-        if len(options['pc_ratios']):
-            xlabel += f" ({round(options['pc_ratios'][0] * 100, 2)}%)"
-            ylabel += f" ({round(options['pc_ratios'][1] * 100, 2)}%)"
-
-        plt.xlabel(xlabel, **label_params)
-        plt.ylabel(ylabel, **label_params)
-
-        for target, color in zip(targets, colors):
-            indicesToKeep = dataframe['label'] == target
-            x = dataframe.loc[indicesToKeep, 'principal component 1']
-            y = dataframe.loc[indicesToKeep, 'principal component 2']
-            if options['points']:
-                alpha = 1
-                if options['metrics']:
-                    alpha = .2
-                plt.scatter(x, y, c=color, s=10, alpha=alpha, label=target)
-            if options['metrics']:
-                plt.scatter(np.mean(x), np.mean(y), marker="+", color=color, linewidth=2, s=160)
-                fl.confidence_ellipse(x, y, ax, n_std=1.0, color=color, fill=False, linewidth=2)
-
-        def update(handle, orig):
-            handle.update_from(orig)
-            handle.set_alpha(1)
-
-        plt.legend(prop={'size': 25}, handler_map={PathCollection: HandlerPathCollection(update_func=update),
-                                                   plt.Line2D: HandlerLine2D(update_func=update)})
-    elif options['n_components'] == 3:
-        plt.figure(figsize=(10, 10))
-        ax = plt.axes(projection='3d')
-
-        xlabel = f'Principal Component-1 ({options["ratios"][0]}%)'
-        ylabel = f'Principal Component-2 ({options["ratios"][1]}%)'
-        zlabel = f'Principal Component-3 ({options["ratios"][2]}%)'
-        if len(options['pc_ratios']):
-            xlabel += f" ({round(options['pc_ratios'][0] * 100, 2)}%)"
-            ylabel += f" ({round(options['pc_ratios'][1] * 100, 2)}%)"
-            zlabel += f" ({round(options['pc_ratios'][2] * 100, 2)}%)"
-
-        ax.set_xlabel(xlabel, **label_params)
-        ax.set_ylabel(ylabel, **label_params)
-        ax.set_zlabel(zlabel, **label_params)
-        for target, color in zip(targets, colors):
-            indicesToKeep = dataframe['label'] == target
-            x = dataframe.loc[indicesToKeep, 'principal component 1']
-            y = dataframe.loc[indicesToKeep, 'principal component 2']
-            z = dataframe.loc[indicesToKeep, 'principal component 3']
-            ax.scatter3D(x, y, z, c=color, s=10)
-        plt.legend(targets, prop={'size': 18})
-
-    if options['savedir']:
-        if options["title"] == "":
-            if options['commentary']:
-                options["title"] += options["commentary"]
-
-        plt.savefig(os.path.join(options['savedir'], options["title"] + ".png"), dpi=1200)
-
-    if options['show']:
-        plt.show()
-    plt.close()
 
 def test_model(clf, dataset, iterations=1, verbose=False, show_metrics=False):
     """

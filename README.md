@@ -84,7 +84,7 @@ To use efficiently the project, a certain architecture will be needed when organ
 │   ├── DATASET
 │   ├── MODELS
 │   ├── RESULTS
-│   │   ├── Figures Paper
+│   │   ├── Figures README Paper
 │   │   │   ├──myfigures.png
 │   │   ├──myfigures.png
 │   ├── DATA

@@ -5,7 +5,7 @@ from scipy.signal import butter, filtfilt, freqz, iirnotch
 import numpy as np
 import pandas as pd
 
-
+ # todo put to fiiireflyyy
 def make_envelope(y, threshold, distance):
     peaks = find_peaks(y, threshold=threshold, distance=distance)
     return peaks

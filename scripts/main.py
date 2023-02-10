@@ -1,32 +1,15 @@
 import datetime
-from random import randint
-
-import pandas as pd
 import os
-import fileinput
-import matplotlib.pyplot as plt
-import numpy as np
-import sklearn
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, KFold, cross_val_score
-import signal_processing as spr
-import data_processing as dpr
-import machine_learning as ml
-import seaborn as sns
-import PATHS as P
-import data_processing as dp
-from matplotlib.collections import PathCollection
-from matplotlib.legend_handler import HandlerPathCollection, HandlerLine2D
-from matplotlib.patches import Ellipse
-import fiiireflyyy.firelearn as fl
-import fiiireflyyy.firefiles as ff
-
-import pickle
 from pathlib import Path
 
-import complete_procedures as cp
-import get_plots as gp
+import fiiireflyyy.firefiles as ff
+import matplotlib.pyplot as plt
+import pandas as pd
 import requests
+
+import PATHS as P
+import complete_procedures as cp
+import data_processing as dpr
 
 BOT_TOKEN = "5852039858:AAFajWAuLZjoQM6Tm43EbPEnlkNgqpWCIYE"
 CHAT_ID = 1988021253
@@ -40,15 +23,12 @@ def send_telegram_notification(text):
     r = requests.get(url + "/sendMessage", params=params)
 
 
-
-
 def main():
-    for batch in ["batch 2", ]:
-        for freq in ((0, 300),(300, 5000),(0, 5000), ):
-            cp.fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(freq[0], freq[1], batch)
+    cp.fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(300, 5000, batch='batch 2')
 
 
 main()
+
 
 
 # try:

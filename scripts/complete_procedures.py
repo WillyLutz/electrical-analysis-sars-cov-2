@@ -1,21 +1,17 @@
-import pickle
 import os
 from pathlib import Path
-import PATHS as P
-import pandas as pd
-from sklearn.model_selection import train_test_split
-import fiiireflyyy.firelearn as fl
+
 import fiiireflyyy.firefiles as ff
-import signal_processing as spr
-import data_processing as dpr
-import numpy as np
-import machine_learning as ml
+import fiiireflyyy.firelearn as fl
+import fiiireflyyy.fireprocess as fp
 import matplotlib.pyplot as plt
-import statistics
-import data_analysis as dan
-from random import randint
-import get_plots as gp
-from sklearn.model_selection import train_test_split, KFold, cross_val_score
+import numpy as np
+import pandas as pd
+
+import PATHS as P
+import data_processing as dpr
+import machine_learning as ml
+import signal_processing as spr
 
 
 def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(min_freq=0, max_freq=500,
@@ -24,48 +20,46 @@ def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
     percentiles = 0.1
-    min_feat = int(min_freq * 300 / 5000)
-    max_feat = int(max_freq * 300 / 5000)
-    cov = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                           to_include=("freq_50hz_sample", "T=24H"),
-                                           to_exclude=("TTX", "STACHEL", "NI"),
-                                           verbose=False,
-                                           save=False,
-                                           select_organoids=batches[batch],
-                                           separate_organoids=False,
-                                           freq_range=(min_freq, max_freq),
-                                           label_comment="")
-
-    discarded_cov = dpr.discard_outliers_by_iqr(cov, low_percentile=percentiles,
-                                                high_percentile=1 - percentiles,
-                                                mode='capping')
-
-    ni = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+    cov = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                           to_include=("freq_50hz_sample", "T=24H"),
-                                          to_exclude=("TTX", "STACHEL", "INF"),
+                                          to_exclude=("TTX", "STACHEL", "NI"),
                                           verbose=False,
                                           save=False,
-                                          select_organoids=batches[batch],
+                                          select_samples=batches[batch],
+                                          separate_samples=False,
                                           freq_range=(min_freq, max_freq),
-                                          separate_organoids=False,
                                           label_comment="")
 
-    discarded_ni = dpr.discard_outliers_by_iqr(ni, low_percentile=percentiles,
+    discarded_cov = fp.discard_outliers_by_iqr(cov, low_percentile=percentiles,
                                                high_percentile=1 - percentiles,
                                                mode='capping')
 
-    cov_stachel = dpr.make_dataset_from_freq_files(parent_dir=P.STACHEL,
-                                                   to_include=("freq_50hz_sample", "T=24H",),
-                                                   to_exclude=("TTX", "NI"),
-                                                   verbose=False,
-                                                   freq_range=(min_freq, max_freq),
-                                                   save=False,
-                                                   separate_organoids=False,
-                                                   label_comment=""
-                                                   )
-    discarded_stachel = dpr.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
-                                                    high_percentile=1 - percentiles,
-                                                    mode='capping')
+    ni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                         to_include=("freq_50hz_sample", "T=24H"),
+                                         to_exclude=("TTX", "STACHEL", "INF"),
+                                         verbose=False,
+                                         save=False,
+                                         select_samples=batches[batch],
+                                         freq_range=(min_freq, max_freq),
+                                         separate_samples=False,
+                                         label_comment="")
+
+    discarded_ni = fp.discard_outliers_by_iqr(ni, low_percentile=percentiles,
+                                              high_percentile=1 - percentiles,
+                                              mode='capping')
+
+    cov_stachel = fp.make_dataset_from_freq_files(parent_dir=P.STACHEL,
+                                                  to_include=("freq_50hz_sample", "T=24H",),
+                                                  to_exclude=("TTX", "NI"),
+                                                  verbose=False,
+                                                  freq_range=(min_freq, max_freq),
+                                                  save=False,
+                                                  separate_samples=False,
+                                                  label_comment=""
+                                                  )
+    discarded_stachel = fp.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                   high_percentile=1 - percentiles,
+                                                   mode='capping')
 
     discarded_ni.replace("NI", "Mock", inplace=True)
     discarded_cov.replace("INF", "SARS-CoV-2", inplace=True)
@@ -113,46 +107,46 @@ def fig2b_Smoothened_frequencies_regionHz_Mock_CoV_Stachel_on_batch(min_freq=0, 
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
     percentiles = 0.1
     show = True
-    cov_nostachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                     to_include=("freq_50hz_sample", "T=24H"),
-                                                     to_exclude=("TTX", "STACHEL", "NI"),
-                                                     verbose=False,
-                                                     save=False,
-                                                     freq_range=(min_freq, max_freq),
-                                                     select_organoids=batches[batch],
-                                                     separate_organoids=False,
-                                                     label_comment=" NOSTACHEL")
-
-    discarded_cov_nostachel = dpr.discard_outliers_by_iqr(cov_nostachel, low_percentile=percentiles,
-                                                          high_percentile=1 - percentiles,
-                                                          mode='capping')
-
-    ni_nostachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+    cov_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                     to_include=("freq_50hz_sample", "T=24H"),
-                                                    to_exclude=("TTX", "STACHEL", "INF"),
+                                                    to_exclude=("TTX", "STACHEL", "NI"),
                                                     verbose=False,
-                                                    freq_range=(min_freq, max_freq),
                                                     save=False,
-                                                    select_organoids=batches[batch],
-                                                    separate_organoids=False,
+                                                    freq_range=(min_freq, max_freq),
+                                                    select_samples=batches[batch],
+                                                    separate_samples=False,
                                                     label_comment=" NOSTACHEL")
 
-    discarded_ni_nostachel = dpr.discard_outliers_by_iqr(ni_nostachel, low_percentile=percentiles,
+    discarded_cov_nostachel = fp.discard_outliers_by_iqr(cov_nostachel, low_percentile=percentiles,
                                                          high_percentile=1 - percentiles,
                                                          mode='capping')
 
-    cov_stachel = dpr.make_dataset_from_freq_files(parent_dir=P.STACHEL,
-                                                   to_include=("freq_50hz_sample", "T=24H",),
-                                                   to_exclude=("TTX", "NI"),
+    ni_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                                   to_include=("freq_50hz_sample", "T=24H"),
+                                                   to_exclude=("TTX", "STACHEL", "INF"),
                                                    verbose=False,
                                                    freq_range=(min_freq, max_freq),
                                                    save=False,
-                                                   separate_organoids=False,
-                                                   label_comment=" STACHEL0"
-                                                   )
-    discarded_cov_stachel = dpr.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                   select_samples=batches[batch],
+                                                   separate_samples=False,
+                                                   label_comment=" NOSTACHEL")
+
+    discarded_ni_nostachel = fp.discard_outliers_by_iqr(ni_nostachel, low_percentile=percentiles,
                                                         high_percentile=1 - percentiles,
                                                         mode='capping')
+
+    cov_stachel = fp.make_dataset_from_freq_files(parent_dir=P.STACHEL,
+                                                  to_include=("freq_50hz_sample", "T=24H",),
+                                                  to_exclude=("TTX", "NI"),
+                                                  verbose=False,
+                                                  freq_range=(min_freq, max_freq),
+                                                  save=False,
+                                                  separate_samples=False,
+                                                  label_comment=" STACHEL0"
+                                                  )
+    discarded_cov_stachel = fp.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                       high_percentile=1 - percentiles,
+                                                       mode='capping')
 
     discarded_ni_nostachel.replace("NI NOSTACHEL", "Mock", inplace=True)
     discarded_cov_nostachel.replace("INF NOSTACHEL", "SARS-CoV-2", inplace=True)
@@ -199,36 +193,36 @@ def fig2b_Smoothened_frequencies_regionHz_Mock_CoV_Stachel_on_batch(min_freq=0, 
 
 def fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(min_freq, max_freq, batch="all organoids"):
     percentiles = 0.1
-    n_components = 2
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    n_components = 3
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"], "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
+    #todo : mettre tous les batchs organoids en str
 
-    covni = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                             to_include=("freq_50hz_sample", "T=24H"),
-                                             to_exclude=("TTX", "STACHEL",),
-                                             verbose=False,
-                                             save=False,
-                                             freq_range=(min_freq, max_freq),
-                                             select_organoids=batches[batch],
-                                             separate_organoids=False,
-                                             label_comment="")
+    covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                            to_include=("freq_50hz_sample", "T=24H"),
+                                            to_exclude=("TTX", "STACHEL",),
+                                            verbose=False,
+                                            save=False,
+                                            freq_range=(min_freq, max_freq),
+                                            select_samples=batches[batch],
+                                            separate_samples=False,
+                                            label_comment="")
+    discarded_covni = fp.discard_outliers_by_iqr(covni, low_percentile=percentiles,
+                                                 high_percentile=1 - percentiles,
+                                                 mode='capping')
 
-    discarded_covni = dpr.discard_outliers_by_iqr(covni, low_percentile=percentiles,
-                                                  high_percentile=1 - percentiles,
-                                                  mode='capping')
+    covni_stachel = fp.make_dataset_from_freq_files(parent_dir=P.STACHEL,
+                                                    to_include=("freq_50hz_sample", "T=24H"),
+                                                    to_exclude=("TTX", "NI"),
+                                                    verbose=False,
+                                                    save=False,
+                                                    freq_range=(min_freq, max_freq),
+                                                    select_samples=batches["batch 2"],
+                                                    separate_samples=False,
+                                                    label_comment="")
 
-    covni_stachel = dpr.make_dataset_from_freq_files(parent_dir=P.STACHEL,
-                                                     to_include=("freq_50hz_sample", "T=24H"),
-                                                     to_exclude=("TTX", "NI"),
-                                                     verbose=False,
-                                                     save=False,
-                                                     freq_range=(min_freq, max_freq),
-                                                     select_organoids=batches["batch 2"],
-                                                     separate_organoids=False,
-                                                     label_comment="")
-
-    discarded_covni_stachel = dpr.discard_outliers_by_iqr(covni_stachel, low_percentile=percentiles,
-                                                          high_percentile=1 - percentiles,
-                                                          mode='capping')
+    discarded_covni_stachel = fp.discard_outliers_by_iqr(covni_stachel, low_percentile=percentiles,
+                                                         high_percentile=1 - percentiles,
+                                                         mode='capping')
 
     discarded_covni.replace("NI", "Mock", inplace=True)
     discarded_covni.replace("INF", "SARS-CoV-2", inplace=True)
@@ -240,9 +234,9 @@ def fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(min_freq, max_
     global_df = pd.concat([pcdf, stachel_pcdf], ignore_index=True)
 
     rounded_ratio = [round(r * 100, 1) for r in ratios]
-    ml.plot_pca(global_df, n_components=2, show=False,
+    fl.plot_pca(global_df, n_components=n_components, show=True,
                 title=f"Fig2a PCA on {min_freq}-{max_freq}Hz {batch} for Mock,CoV, applied on stachel",
-                points=True, metrics=True, savedir=P.FIGURES_PAPER, ratios=rounded_ratio)
+                points=True, metrics=True, savedir='', ratios=rounded_ratio)
 
 
 def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, max_freq=5000,
@@ -251,47 +245,47 @@ def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, ma
     percentiles = 0.1
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
-    covni_24 = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                to_include=("freq_50hz_sample", "T=24H"),
-                                                to_exclude=("TTX", "STACHEL",),
-                                                verbose=False,
-                                                save=False,
-                                                freq_range=(min_freq, max_freq),
-                                                select_organoids=batches[batch],
-                                                separate_organoids=False,
-                                                label_comment=f"")
+    covni_24 = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                               to_include=("freq_50hz_sample", "T=24H"),
+                                               to_exclude=("TTX", "STACHEL",),
+                                               verbose=False,
+                                               save=False,
+                                               freq_range=(min_freq, max_freq),
+                                               select_samples=batches[batch],
+                                               separate_samples=False,
+                                               label_comment=f"")
 
-    discarded_covni_24 = dpr.discard_outliers_by_iqr(covni_24, low_percentile=percentiles,
-                                                     high_percentile=1 - percentiles,
-                                                     mode='capping')
+    discarded_covni_24 = fp.discard_outliers_by_iqr(covni_24, low_percentile=percentiles,
+                                                    high_percentile=1 - percentiles,
+                                                    mode='capping')
 
-    covni_30 = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                to_include=("freq_50hz_sample", "T=30MIN",),
-                                                to_exclude=("TTX", "STACHEL"),
-                                                verbose=False,
-                                                freq_range=(min_freq, max_freq),
-                                                save=False,
-                                                separate_organoids=False,
-                                                select_organoids=batches[batch],
-                                                label_comment=f""
-                                                )
-    discarded_covni_30 = dpr.discard_outliers_by_iqr(covni_30, low_percentile=percentiles,
-                                                     high_percentile=1 - percentiles,
-                                                     mode='capping')
-
-    covni_0 = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                               to_include=("freq_50hz_sample", "T=0MIN",),
+    covni_30 = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                               to_include=("freq_50hz_sample", "T=30MIN",),
                                                to_exclude=("TTX", "STACHEL"),
                                                verbose=False,
                                                freq_range=(min_freq, max_freq),
                                                save=False,
-                                               separate_organoids=False,
-                                               select_organoids=batches[batch],
+                                               separate_samples=False,
+                                               select_samples=batches[batch],
                                                label_comment=f""
                                                )
-    discarded_covni_0 = dpr.discard_outliers_by_iqr(covni_0, low_percentile=percentiles,
+    discarded_covni_30 = fp.discard_outliers_by_iqr(covni_30, low_percentile=percentiles,
                                                     high_percentile=1 - percentiles,
                                                     mode='capping')
+
+    covni_0 = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                              to_include=("freq_50hz_sample", "T=0MIN",),
+                                              to_exclude=("TTX", "STACHEL"),
+                                              verbose=False,
+                                              freq_range=(min_freq, max_freq),
+                                              save=False,
+                                              separate_samples=False,
+                                              select_samples=batches[batch],
+                                              label_comment=f""
+                                              )
+    discarded_covni_0 = fp.discard_outliers_by_iqr(covni_0, low_percentile=percentiles,
+                                                   high_percentile=1 - percentiles,
+                                                   mode='capping')
     discarded_covni_24["label"].replace(f'INF', f'SARS-CoV-2 24H', inplace=True)
     discarded_covni_24["label"].replace(f'NI', f'Mock 24H', inplace=True)
     discarded_covni_30["label"].replace(f'INF', f'SARS-CoV-2 30MIN', inplace=True)
@@ -324,19 +318,19 @@ def fig1f_PCA_on_regionHz_all_organoids_for_Mock_CoV(min_freq, max_freq, batch="
     n_components = 2
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
-    covni = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                             to_include=("freq_50hz_sample", "T=24H"),
-                                             to_exclude=("TTX", "STACHEL",),
-                                             verbose=False,
-                                             save=False,
-                                             freq_range=(min_freq, max_freq),
-                                             select_organoids=batches[batch],
-                                             separate_organoids=False,
-                                             label_comment="")
+    covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                            to_include=("freq_50hz_sample", "T=24H"),
+                                            to_exclude=("TTX", "STACHEL",),
+                                            verbose=False,
+                                            save=False,
+                                            freq_range=(min_freq, max_freq),
+                                            select_samples=batches[batch],
+                                            separate_samples=False,
+                                            label_comment="")
 
-    discarded_covni = dpr.discard_outliers_by_iqr(covni, low_percentile=percentiles,
-                                                  high_percentile=1 - percentiles,
-                                                  mode='capping')
+    discarded_covni = fp.discard_outliers_by_iqr(covni, low_percentile=percentiles,
+                                                 high_percentile=1 - percentiles,
+                                                 mode='capping')
 
     discarded_covni.replace("NI", "Mock", inplace=True)
     discarded_covni.replace("INF", "SARS-CoV-2", inplace=True)
@@ -352,33 +346,33 @@ def fig1e_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=0, max_
     percentiles = 0.1
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
-    covni_train_batch = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                         to_include=("freq_50hz_sample", "T=24H"),
-                                                         to_exclude=("TTX", "STACHEL",),
-                                                         verbose=False,
-                                                         save=False,
-                                                         freq_range=(min_freq, max_freq),
-                                                         select_organoids=batches[train_batch],
-                                                         separate_organoids=False,
-                                                         label_comment=f" {train_batch}")
-
-    discarded_covni_train_batch = dpr.discard_outliers_by_iqr(covni_train_batch, low_percentile=percentiles,
-                                                              high_percentile=1 - percentiles,
-                                                              mode='capping')
-
-    covni_test_batch = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                        to_include=("freq_50hz_sample", "T=24H",),
-                                                        to_exclude=("TTX", "STACHEL"),
+    covni_train_batch = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                                        to_include=("freq_50hz_sample", "T=24H"),
+                                                        to_exclude=("TTX", "STACHEL",),
                                                         verbose=False,
-                                                        freq_range=(min_freq, max_freq),
                                                         save=False,
-                                                        separate_organoids=False,
-                                                        select_organoids=batches[test_batch],
-                                                        label_comment=f" {test_batch}"
-                                                        )
-    discarded_covni_test_batch = dpr.discard_outliers_by_iqr(covni_test_batch, low_percentile=percentiles,
+                                                        freq_range=(min_freq, max_freq),
+                                                        select_samples=batches[train_batch],
+                                                        separate_samples=False,
+                                                        label_comment=f" {train_batch}")
+
+    discarded_covni_train_batch = fp.discard_outliers_by_iqr(covni_train_batch, low_percentile=percentiles,
                                                              high_percentile=1 - percentiles,
                                                              mode='capping')
+
+    covni_test_batch = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                                       to_include=("freq_50hz_sample", "T=24H",),
+                                                       to_exclude=("TTX", "STACHEL"),
+                                                       verbose=False,
+                                                       freq_range=(min_freq, max_freq),
+                                                       save=False,
+                                                       separate_samples=False,
+                                                       select_samples=batches[test_batch],
+                                                       label_comment=f" {test_batch}"
+                                                       )
+    discarded_covni_test_batch = fp.discard_outliers_by_iqr(covni_test_batch, low_percentile=percentiles,
+                                                            high_percentile=1 - percentiles,
+                                                            mode='capping')
     discarded_covni_train_batch["label"].replace(f'INF {train_batch}', f'SARS-CoV-2 {train_batch}', inplace=True)
     discarded_covni_test_batch["label"].replace(f'INF {test_batch}', f'SARS-CoV-2 {test_batch}', inplace=True)
     discarded_covni_train_batch["label"].replace(f'NI {train_batch}', f'Mock {train_batch}', inplace=True)
@@ -401,33 +395,33 @@ def fig1d_Amplitude_for_Mock_CoV_in_region_Hz_at_T_24H_for_all_organoids(min_fre
     percentiles = 0.1
     min_feat = int(min_freq * 300 / 5000)
     max_feat = int(max_freq * 300 / 5000)
-    cov = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                           to_include=("freq_50hz_sample", "T=24H"),
-                                           to_exclude=("TTX", "STACHEL", "NI"),
-                                           verbose=False,
-                                           save=False,
-                                           select_organoids=[1, 2, 3, 4, 5, 6, 7],
-                                           separate_organoids=False,
-                                           freq_range=(min_freq, max_freq),
-                                           label_comment="")
-
-    discarded_cov = dpr.discard_outliers_by_iqr(cov, low_percentile=percentiles,
-                                                high_percentile=1 - percentiles,
-                                                mode='capping')
-
-    ni = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+    cov = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                           to_include=("freq_50hz_sample", "T=24H"),
-                                          to_exclude=("TTX", "STACHEL", "INF"),
+                                          to_exclude=("TTX", "STACHEL", "NI"),
                                           verbose=False,
                                           save=False,
-                                          select_organoids=[1, 2, 3, 4, 5, 6, 7],
+                                          select_samples=[1, 2, 3, 4, 5, 6, 7],
+                                          separate_samples=False,
                                           freq_range=(min_freq, max_freq),
-                                          separate_organoids=False,
                                           label_comment="")
 
-    discarded_ni = dpr.discard_outliers_by_iqr(ni, low_percentile=percentiles,
+    discarded_cov = fp.discard_outliers_by_iqr(cov, low_percentile=percentiles,
                                                high_percentile=1 - percentiles,
                                                mode='capping')
+
+    ni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                         to_include=("freq_50hz_sample", "T=24H"),
+                                         to_exclude=("TTX", "STACHEL", "INF"),
+                                         verbose=False,
+                                         save=False,
+                                         select_samples=[1, 2, 3, 4, 5, 6, 7],
+                                         freq_range=(min_freq, max_freq),
+                                         separate_samples=False,
+                                         label_comment="")
+
+    discarded_ni = fp.discard_outliers_by_iqr(ni, low_percentile=percentiles,
+                                              high_percentile=1 - percentiles,
+                                              mode='capping')
 
     discarded_ni.replace("NI", "Mock", inplace=True)
     discarded_cov.replace("INF", "SARS-CoV-2", inplace=True)
@@ -467,33 +461,33 @@ def fig1c_Feature_importance_for_regionHz_at_T_24H_batch_for_Mock_CoV(min_freq=0
     show = False
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
-    class1 = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                              to_include=("freq_50hz_sample", "T=24H"),
-                                              to_exclude=("TTX", "STACHEL", "NI"),
-                                              verbose=False,
-                                              save=False,
-                                              freq_range=(min_freq, max_freq),
-                                              select_organoids=batches[batch],
-                                              separate_organoids=False,
-                                              label_comment=f" {batch}")
+    class1 = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                             to_include=("freq_50hz_sample", "T=24H"),
+                                             to_exclude=("TTX", "STACHEL", "NI"),
+                                             verbose=False,
+                                             save=False,
+                                             freq_range=(min_freq, max_freq),
+                                             select_samples=batches[batch],
+                                             separate_samples=False,
+                                             label_comment=f" {batch}")
 
-    discarded_class1 = dpr.discard_outliers_by_iqr(class1, low_percentile=percentiles,
-                                                   high_percentile=1 - percentiles,
-                                                   mode='capping')
+    discarded_class1 = fp.discard_outliers_by_iqr(class1, low_percentile=percentiles,
+                                                  high_percentile=1 - percentiles,
+                                                  mode='capping')
 
-    class2 = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                              to_include=("freq_50hz_sample", "T=24H"),
-                                              to_exclude=("TTX", "STACHEL", "INF"),
-                                              verbose=False,
-                                              save=False,
-                                              freq_range=(min_freq, max_freq),
-                                              select_organoids=batches[batch],
-                                              separate_organoids=False,
-                                              label_comment=f" {batch}")
+    class2 = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                             to_include=("freq_50hz_sample", "T=24H"),
+                                             to_exclude=("TTX", "STACHEL", "INF"),
+                                             verbose=False,
+                                             save=False,
+                                             freq_range=(min_freq, max_freq),
+                                             select_samples=batches[batch],
+                                             separate_samples=False,
+                                             label_comment=f" {batch}")
 
-    discarded_class2 = dpr.discard_outliers_by_iqr(class2, low_percentile=percentiles,
-                                                   high_percentile=1 - percentiles,
-                                                   mode='capping')
+    discarded_class2 = fp.discard_outliers_by_iqr(class2, low_percentile=percentiles,
+                                                  high_percentile=1 - percentiles,
+                                                  mode='capping')
 
     discarded_class2.replace(f"NI {batch}", "Mock", inplace=True)
     discarded_class1.replace(f"INF {batch}", "SARS-CoV-2", inplace=True)
@@ -532,19 +526,19 @@ def fig1b_Smoothened_frequencies_regionHz_Mock_CoV_on_batch(min_freq=0, max_freq
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
     show = False
-    covni = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                             to_include=("freq_50hz_sample", "T=24H"),
-                                             to_exclude=("TTX", "STACHEL", "NI"),
-                                             verbose=False,
-                                             save=False,
-                                             freq_range=(min_freq, max_freq),
-                                             select_organoids=batches[batch],
-                                             separate_organoids=False,
-                                             label_comment="")
+    covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                            to_include=("freq_50hz_sample", "T=24H"),
+                                            to_exclude=("TTX", "STACHEL", "NI"),
+                                            verbose=False,
+                                            save=False,
+                                            freq_range=(min_freq, max_freq),
+                                            select_samples=batches[batch],
+                                            separate_samples=False,
+                                            label_comment="")
 
-    discarded_covni = dpr.discard_outliers_by_iqr(covni, low_percentile=percentiles,
-                                                  high_percentile=1 - percentiles,
-                                                  mode='capping')
+    discarded_covni = fp.discard_outliers_by_iqr(covni, low_percentile=percentiles,
+                                                 high_percentile=1 - percentiles,
+                                                 mode='capping')
 
     discarded_covni.replace("NI", "Mock", inplace=True)
     discarded_covni.replace("INF", "SARS-CoV-2", inplace=True)
@@ -584,33 +578,33 @@ def fig1a_Confusion_matrix_train_test_on_batches_Mock_CoV(min_freq=0, max_freq=5
     percentiles = 0.1
     batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
 
-    covni_train_batch = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                         to_include=("freq_50hz_sample", "T=24H"),
-                                                         to_exclude=("TTX", "STACHEL",),
-                                                         verbose=False,
-                                                         save=False,
-                                                         freq_range=(min_freq, max_freq),
-                                                         select_organoids=batches[train_batch],
-                                                         separate_organoids=False,
-                                                         label_comment=f" {train_batch}")
-
-    discarded_covni_train_batch = dpr.discard_outliers_by_iqr(covni_train_batch, low_percentile=percentiles,
-                                                              high_percentile=1 - percentiles,
-                                                              mode='capping')
-
-    covni_test_batch = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                        to_include=("freq_50hz_sample", "T=24H",),
-                                                        to_exclude=("TTX", "STACHEL"),
+    covni_train_batch = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                                        to_include=("freq_50hz_sample", "T=24H"),
+                                                        to_exclude=("TTX", "STACHEL",),
                                                         verbose=False,
-                                                        freq_range=(min_freq, max_freq),
                                                         save=False,
-                                                        separate_organoids=False,
-                                                        select_organoids=batches[test_batch],
-                                                        label_comment=f" {test_batch}"
-                                                        )
-    discarded_covni_test_batch = dpr.discard_outliers_by_iqr(covni_test_batch, low_percentile=percentiles,
+                                                        freq_range=(min_freq, max_freq),
+                                                        select_samples=batches[train_batch],
+                                                        separate_samples=False,
+                                                        label_comment=f" {train_batch}")
+
+    discarded_covni_train_batch = fp.discard_outliers_by_iqr(covni_train_batch, low_percentile=percentiles,
                                                              high_percentile=1 - percentiles,
                                                              mode='capping')
+
+    covni_test_batch = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                                       to_include=("freq_50hz_sample", "T=24H",),
+                                                       to_exclude=("TTX", "STACHEL"),
+                                                       verbose=False,
+                                                       freq_range=(min_freq, max_freq),
+                                                       save=False,
+                                                       separate_samples=False,
+                                                       select_samples=batches[test_batch],
+                                                       label_comment=f" {test_batch}"
+                                                       )
+    discarded_covni_test_batch = fp.discard_outliers_by_iqr(covni_test_batch, low_percentile=percentiles,
+                                                            high_percentile=1 - percentiles,
+                                                            mode='capping')
     discarded_covni_train_batch["label"].replace(f'INF {train_batch}', f'SARS-CoV-2 {train_batch}', inplace=True)
     discarded_covni_test_batch["label"].replace(f'INF {test_batch}', f'SARS-CoV-2 {test_batch}', inplace=True)
     discarded_covni_train_batch["label"].replace(f'NI {train_batch}', f'Mock {train_batch}', inplace=True)
@@ -632,43 +626,43 @@ def amplitude_bar_plot_for_mock_cov_cov_stachel_at_T_24_without_outlier_01(min_f
     # roi: 0-25 (0-416 Hz) and 230-250 (~3800-4200 Hz)
     n_components = 2
     percentiles = 0.1
-    cov_nostachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                     to_include=("freq_50hz_sample", "T=24H"),
-                                                     to_exclude=("TTX", "STACHEL", "NI"),
-                                                     verbose=False,
-                                                     save=False,
-                                                     select_organoids=[1, 2, 3, 4, ],
-                                                     separate_organoids=False,
-                                                     label_comment=" NOSTACHEL")
-
-    discarded_cov_nostachel = dpr.discard_outliers_by_iqr(cov_nostachel, low_percentile=percentiles,
-                                                          high_percentile=1 - percentiles,
-                                                          mode='capping')
-
-    ni_nostachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+    cov_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                     to_include=("freq_50hz_sample", "T=24H"),
-                                                    to_exclude=("TTX", "STACHEL", "INF"),
+                                                    to_exclude=("TTX", "STACHEL", "NI"),
                                                     verbose=False,
                                                     save=False,
-                                                    select_organoids=[1, 2, 3, 4, ],
-                                                    separate_organoids=False,
+                                                    select_samples=[1, 2, 3, 4, ],
+                                                    separate_samples=False,
                                                     label_comment=" NOSTACHEL")
 
-    discarded_ni_nostachel = dpr.discard_outliers_by_iqr(ni_nostachel, low_percentile=percentiles,
+    discarded_cov_nostachel = fp.discard_outliers_by_iqr(cov_nostachel, low_percentile=percentiles,
                                                          high_percentile=1 - percentiles,
                                                          mode='capping')
 
-    cov_stachel = dpr.make_dataset_from_freq_files(parent_dir=P.STACHEL,
-                                                   to_include=("freq_50hz_sample", "T=24H",),
-                                                   to_exclude=("TTX", "NI"),
+    ni_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                                   to_include=("freq_50hz_sample", "T=24H"),
+                                                   to_exclude=("TTX", "STACHEL", "INF"),
                                                    verbose=False,
                                                    save=False,
-                                                   separate_organoids=False,
-                                                   label_comment=" STACHEL0"
-                                                   )
-    discarded_cov_stachel = dpr.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                   select_samples=[1, 2, 3, 4, ],
+                                                   separate_samples=False,
+                                                   label_comment=" NOSTACHEL")
+
+    discarded_ni_nostachel = fp.discard_outliers_by_iqr(ni_nostachel, low_percentile=percentiles,
                                                         high_percentile=1 - percentiles,
                                                         mode='capping')
+
+    cov_stachel = fp.make_dataset_from_freq_files(parent_dir=P.STACHEL,
+                                                  to_include=("freq_50hz_sample", "T=24H",),
+                                                  to_exclude=("TTX", "NI"),
+                                                  verbose=False,
+                                                  save=False,
+                                                  separate_samples=False,
+                                                  label_comment=" STACHEL0"
+                                                  )
+    discarded_cov_stachel = fp.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                       high_percentile=1 - percentiles,
+                                                       mode='capping')
 
     discarded_ni_nostachel.replace("NI NOSTACHEL", "Mock", inplace=True)
     discarded_cov_nostachel.replace("INF NOSTACHEL", "SARS-CoV-2", inplace=True)
@@ -707,43 +701,43 @@ def amplitude_bar_plot_for_mock_cov_cov_stachel_at_T_24_without_outlier_01(min_f
 def smoothened_frequencies_for_Mock_CoV_CoV_Stachel_at_T_24H_without_outliers_01():
     percentiles = 0.1
 
-    cov_nostachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
-                                                     to_include=("freq_50hz_sample", "T=24H"),
-                                                     to_exclude=("TTX", "STACHEL", "NI"),
-                                                     verbose=False,
-                                                     save=False,
-                                                     select_organoids=[5, 6, 7],
-                                                     separate_organoids=False,
-                                                     label_comment=" NOSTACHEL")
-
-    discarded_cov_nostachel = dpr.discard_outliers_by_iqr(cov_nostachel, low_percentile=percentiles,
-                                                          high_percentile=1 - percentiles,
-                                                          mode='capping')
-
-    ni_nostachel = dpr.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+    cov_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                     to_include=("freq_50hz_sample", "T=24H"),
-                                                    to_exclude=("TTX", "STACHEL", "INF"),
+                                                    to_exclude=("TTX", "STACHEL", "NI"),
                                                     verbose=False,
                                                     save=False,
-                                                    select_organoids=[5, 6, 7],
-                                                    separate_organoids=False,
+                                                    select_samples=[5, 6, 7],
+                                                    separate_samples=False,
                                                     label_comment=" NOSTACHEL")
 
-    discarded_ni_nostachel = dpr.discard_outliers_by_iqr(ni_nostachel, low_percentile=percentiles,
+    discarded_cov_nostachel = fp.discard_outliers_by_iqr(cov_nostachel, low_percentile=percentiles,
                                                          high_percentile=1 - percentiles,
                                                          mode='capping')
 
-    cov_stachel = dpr.make_dataset_from_freq_files(parent_dir=P.STACHEL,
-                                                   to_include=("freq_50hz_sample", "T=24H",),
-                                                   to_exclude=("TTX", "NI"),
+    ni_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                                   to_include=("freq_50hz_sample", "T=24H"),
+                                                   to_exclude=("TTX", "STACHEL", "INF"),
                                                    verbose=False,
                                                    save=False,
-                                                   separate_organoids=False,
-                                                   label_comment=" STACHEL0"
-                                                   )
-    discarded_cov_stachel = dpr.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                   select_samples=[5, 6, 7],
+                                                   separate_samples=False,
+                                                   label_comment=" NOSTACHEL")
+
+    discarded_ni_nostachel = fp.discard_outliers_by_iqr(ni_nostachel, low_percentile=percentiles,
                                                         high_percentile=1 - percentiles,
                                                         mode='capping')
+
+    cov_stachel = fp.make_dataset_from_freq_files(parent_dir=P.STACHEL,
+                                                  to_include=("freq_50hz_sample", "T=24H",),
+                                                  to_exclude=("TTX", "NI"),
+                                                  verbose=False,
+                                                  save=False,
+                                                  separate_samples=False,
+                                                  label_comment=" STACHEL0"
+                                                  )
+    discarded_cov_stachel = fp.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                       high_percentile=1 - percentiles,
+                                                       mode='capping')
 
     discarded_ni_nostachel.replace("NI NOSTACHEL", "Mock", inplace=True)
     discarded_cov_nostachel.replace("INF NOSTACHEL", "SARS-CoV-2", inplace=True)
@@ -786,164 +780,4 @@ def smoothened_frequencies_for_Mock_CoV_CoV_Stachel_at_T_24H_without_outliers_01
     plt.savefig(os.path.join(P.RESULTS,
                              "Smoothened frequencies for Mock,CoV,CoV Stachel at T=24H organoids5,6,7 for Ni CoV.png"),
                 dpi=1200)
-    plt.show()
-
-
-def generate_stachel_dataset():
-    timepoint = "T=24H"
-    spec = "manip stachel"
-
-    files = ff.get_all_files(os.path.join(P.NOSTACHEL, "T=24H"))
-    freq_files = []
-    for f in files:
-        if "freq_50hz" in f and "TTX" not in f and "STACHEL" not in f:
-            freq_files.append(f)
-
-    dataset = pd.DataFrame(columns=[x for x in range(0, 300)])
-    target = pd.DataFrame(columns=["status", ])
-
-    for f in freq_files:
-        print(f)
-        df = pd.read_csv(f)
-        df_top = dpr.top_N_electrodes(df, 35, "Frequency [Hz]")
-        samples = dpr.equal_samples(df_top, 30)
-
-        for df_s in samples:
-
-            df_mean = dpr.merge_all_columns_to_mean(df_s, "Frequency [Hz]").round(3)
-
-            downsampled_df = dpr.down_sample(df_mean["mean"], 300, 'mean')
-
-            # construct the dataset with n features
-            dataset.loc[len(dataset)] = downsampled_df
-
-            path = Path(f)
-            if os.path.basename(path.parent.parent) == "NI":
-                target.loc[len(target)] = 0
-            elif os.path.basename(path.parent.parent) == "INF":
-                target.loc[len(target)] = 1
-
-    dataset["status"] = target["status"]
-    ff.verify_dir(P.DATASETS)
-    dataset.to_csv(os.path.join(P.DATASETS, f"training dataset {timepoint} {spec}.csv"), index=False)
-
-
-def generate_basic_dataset():
-    files = ff.get_all_files(os.path.join(P.FOUR_ORGANOIDS, "T=24H"))
-    pr_paths = []
-    # mean between the topped channels
-    for f in files:
-        if "pr_" in f:
-            pr_paths.append(f)
-
-    dataset = pd.DataFrame(columns=[x for x in range(0, 300)])
-    target = pd.DataFrame(columns=["status", ])
-
-    for f in pr_paths:
-        print(f)
-        df = pd.read_csv(f)
-        df_top = dpr.top_N_electrodes(df, 35, "TimeStamp")
-        samples = dpr.equal_samples(df_top, 30)
-        channels = df_top.columns
-
-        for df_s in samples:
-            fft_all_channels = pd.DataFrame()
-
-            # fft of the signal
-            for ch in channels[1:]:
-                filtered = spr.butter_filter(df_s[ch], order=3, lowcut=50)
-                clean_fft, clean_freqs = spr.fast_fourier(filtered, 10000)
-                fft_all_channels[ch] = clean_fft
-                fft_all_channels["Frequency [Hz]"] = clean_freqs
-            # mean between the topped channels
-            df_mean = dpr.merge_all_columns_to_mean(fft_all_channels, "Frequency [Hz]").round(3)
-
-            # Down sampling by n
-            downsampled_df = dpr.down_sample(df_mean["mean"], 300, 'mean')
-
-            # construct the dataset with n features
-            dataset.loc[len(dataset)] = downsampled_df
-
-            path = Path(f)
-            if os.path.basename(path.parent.parent) == "NI":
-                target.loc[len(target)] = 0
-            elif os.path.basename(path.parent.parent) == "INF":
-                target.loc[len(target)] = 1
-
-    dataset["status"] = target["status"]
-    ff.verify_dir(P.DATASETS)
-    dataset.to_csv(os.path.join(P.DATASETS, "training dataset T=24H basic batch.csv"))
-
-
-def impact_of_stachel_on_classification_performance():
-    path = os.path.join(P.RESULTS, "Stachel results.xlsx")
-    df = pd.read_excel(path, index_col=False)
-
-    recording = ["T=0MIN", "T=30MIN", "T=24H", ]
-    recording_idx = [x for x in range(len(recording))]
-    stachel = ["None", "T=0MIN", "T=24H", "T=24H+TTX"]
-    stachel_idx = [x for x in range(len(stachel))]
-    fig, axes = plt.subplots(len(recording), len(stachel), figsize=(4 * len(recording), 5 * len(stachel)))
-
-    # --------- GETTING DATA ----------------------
-
-    for r in recording_idx:
-        for s in stachel_idx:
-            sub_df = df[(df['Stachel addition'] == stachel[s]) & (df["Recording time"] == recording[r])].reset_index(
-                drop=True)
-            if not sub_df.empty:
-                number_of_positive_entries = int(sub_df["TP cnt"]) + int(sub_df["FN cnt"])
-                number_of_negative_entries = int(sub_df["TN cnt"]) + int(sub_df["FP cnt"])
-
-                # -----------PLOTTING DATA --------------------
-
-                acc = int(sub_df["Accuracy"][0] * 100)
-                axes[r, s].bar(0, acc, edgecolor='black', color="black")
-                axes[r, s].text(-0.1, acc / 2, str(acc) + "%", color="white")
-
-                tp_ratio = int(sub_df["TP cnt"][0] / number_of_positive_entries * 100)
-                fn_ratio = int(sub_df["FN cnt"][0] / number_of_positive_entries * 100)
-                tp_cup = (int(sub_df["TP CUP"][0] * 100), sub_df["TP CUP std"][0])
-                fn_cup = (int(sub_df["FN CUP"][0] * 100), sub_df["FN CUP std"][0])
-                axes[r, s].bar(1, tp_ratio, edgecolor='black', color='darkgray')
-                axes[r, s].bar(1, fn_ratio, bottom=tp_ratio, edgecolor='black', color='whitesmoke')
-                axes[r, s].text(0.6, tp_ratio / 2, "CUP TP\n=" + str(tp_cup[0]) + "%")
-                axes[r, s].text(0.6, fn_ratio / 2 + tp_ratio, "CUP FN\n=" + str(fn_cup[0]) + "%")
-
-                tn_ratio = int(sub_df["TN cnt"][0] / number_of_negative_entries * 100)
-                fp_ratio = int(sub_df["FP cnt"][0] / number_of_negative_entries * 100)
-                tn_cup = (int(sub_df["TN CUP"][0] * 100), sub_df["TN CUP std"][0])
-                fp_cup = (int(sub_df["FP CUP"][0] * 100), sub_df["FP CUP std"][0])
-                axes[r, s].bar(2, tn_ratio, edgecolor='black', color='darkgray', label="Correctly predicted")
-                axes[r, s].bar(2, fp_ratio, bottom=tn_ratio, edgecolor='black', color='whitesmoke',
-                               label="Misclassified INF/NI")
-                axes[r, s].text(1.6, tn_ratio / 2, "CUP TN\n=" + str(tn_cup[0]) + "%")
-                axes[r, s].text(1.6, fp_ratio / 2 + tn_ratio, "CUP FP\n=" + str(fp_cup[0]) + "%")
-
-                # -----------------------------------------------
-                axes[r, s].set_axisbelow(True)
-                axes[r, s].yaxis.grid(color='black', linestyle='dotted', alpha=0.7)
-                axes[r, s].set_xticks([0, 1, 2], ["Model acc.", "INF", "NI"])
-                axes[r, s].set_aspect("auto")
-                axes[r, s].plot([], [], ' ', label="CUP: Confidence upon prediction")
-                if s == 0:
-                    axes[r, s].set_ylabel("Prediction ratio")
-
-    cols = ["Stachel: None", "Stachel: T=0MIN", "Stachel: T=24H", "Stachel: T=24H+TTX"]
-    rows = ["Recording:\nT=0MIN", "Recording:\nT=30MIN", "Recording:\nT=24H"]
-    pad = 5
-    for ax, col in zip(axes[0], cols):
-        ax.annotate(col, xy=(0.5, 1), xytext=(0, pad),
-                    xycoords='axes fraction', textcoords='offset points',
-                    size='large', ha='center', va='baseline', )
-
-    for ax, row in zip(axes[:, 0], rows):
-        ax.annotate(row, xy=(0, 0.5), xytext=(-ax.yaxis.labelpad - pad, 0),
-                    xycoords=ax.yaxis.label, textcoords='offset points',
-                    size='large', ha='right', va='center', rotation=90.0)
-
-    handles, labels = axes[0, 0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='lower center')
-    fig.suptitle("impact of Stachel on predictions done by the model trained at T=24H", fontsize=15)
-
     plt.show()
