@@ -54,7 +54,7 @@ Plot the relative importance of the features for a trained RFC model.
 
 ## Data acquisition
 The signal has been recorded at 10 kHz, with a MEA 60 channels electrode. 
-For more information about the array, refer to [their page](https://www.multichannelsystems.com/systems/mea2100-mini-60-system). Each recording has been 
+For more information about the array, refer to [their page](https://www.multichannelsystems.com/products/60-3dmea2001280ir-ti-gr). Each recording has been 
 done 3 times,on a minimum of 3 organoids per test batch.
 
 
