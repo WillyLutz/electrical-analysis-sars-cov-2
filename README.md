@@ -145,7 +145,7 @@ Language: Python 3.10
 OS: Ubuntu 22.04.1 LTS
 
 ## Usage
-This part will help you getting started with the use of this project. 
+This part will help you getting started with the use of this project. Please note that this project has heavy dependance on the python package `fiiireflyyy`, developed by the same author. 
 
 #### The PATHS.py file
 After succesfully cloning the repository as an IDE project, the first thing you want to do is to modify the constants used for this project, such as the absolute paths. 
@@ -176,6 +176,7 @@ The parameter `batch` can take 3 different values: `batch 1`, `batch 2`, `all or
 
 Be aware that those procedures functions with a specific data architecture and file names. You may have to modify them accordingly if the structure is modified.
 
+#### Create your own pipeline
 
 ## Support
 For any support request, you can either use this project issue tracker, or state your request at <willy.lutz@irim.cnrs.fr> by precising in the object the name of this repository followed by the summarized issue.
