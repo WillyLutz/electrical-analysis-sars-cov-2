@@ -6,7 +6,7 @@ DATA = os.path.join(DISK, "DATA")
 RESULTS = os.path.join(DISK, "RESULTS/")
 MODELS = os.path.join(DISK, "MODELS/")
 DATASETS = os.path.join(DISK, "DATASETS/")
-FIGURES_PAPER = os.path.join(RESULTS, "Figures README Paper")
+FIGURES_PAPER = os.path.join(RESULTS, "Figures Paper")
 STACHEL = os.path.join(DATA, "+ Stachel/")
 NOSTACHEL = os.path.join(DATA, "- Stachel/")
 

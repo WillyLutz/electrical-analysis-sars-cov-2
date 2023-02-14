@@ -2,7 +2,10 @@ import complete_procedures as cp
 
 
 def main():
-    cp.fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(300, 5000, batch='batch 2')
+
+    cp.fig2d_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz_test_on_stachel(min_freq=300, max_freq=5000,
+                                                                                   batch="batch 2")
+
 
 
 main()

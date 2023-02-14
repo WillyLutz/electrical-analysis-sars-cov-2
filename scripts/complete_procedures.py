@@ -14,10 +14,62 @@ import machine_learning as ml
 import signal_processing as spr
 
 
+def fig2d_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz_test_on_stachel(min_freq=300, max_freq=5000,
+                                                                                batch="batch 2",
+                                                                                ):
+    show = False
+    percentiles = 0.1
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"], "all organoids": ["1", "2", "3", "4", "5",
+                                                                                              "6", "7"]}
+
+    covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
+                                            to_include=("freq_50hz_sample", "T=24H"),
+                                            to_exclude=("TTX", "STACHEL",),
+                                            verbose=False,
+                                            save=False,
+                                            freq_range=(min_freq, max_freq),
+                                            select_samples=batches[batch],
+                                            separate_samples=False,
+                                            label_comment=f"")
+
+    discarded_covni = fp.discard_outliers_by_iqr(covni, low_percentile=percentiles,
+                                                 high_percentile=1 - percentiles,
+                                                 mode='capping')
+
+    cov_stachel = fp.make_dataset_from_freq_files(parent_dir=P.STACHEL,
+                                                  to_include=("freq_50hz_sample", "T=24H"),
+                                                  to_exclude=("TTX", "NI",),
+                                                  verbose=False,
+                                                  save=False,
+                                                  freq_range=(min_freq, max_freq),
+                                                  select_samples=batches[batch],
+                                                  separate_samples=False,
+                                                  label_comment=f"")
+
+    discarded_cov_stachel = fp.discard_outliers_by_iqr(cov_stachel, low_percentile=percentiles,
+                                                 high_percentile=1 - percentiles,
+                                                 mode='capping')
+
+    discarded_covni["label"].replace(f'INF', f'SARS-CoV-2', inplace=True)
+    discarded_covni["label"].replace(f'NI', f'Mock', inplace=True)
+    discarded_cov_stachel["label"].replace(f'INF', f'Stachel-treated SARS-CoV-2', inplace=True)
+    rfc, _ = fl.train_RFC_from_dataset(discarded_covni)
+
+    global_df = pd.concat([discarded_covni, discarded_cov_stachel, ], ignore_index=True)
+    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock', f'SARS-CoV-2'),
+                               testing_targets=tuple(set(list((
+                                   f'Mock', f'SARS-CoV-2', f'SARS-CoV-2', f'Stachel-treated SARS-CoV-2',)))),
+                               show=show, verbose=False, savepath=P.FIGURES_PAPER,
+                               title=f"Fig2d Confusion matrix train on T=24H CoV,Mock, test on CpV,Mock,Stachel for {batch} "
+                                     f"{min_freq}-{max_freq}Hz",
+                               iterations=5, )
+
+
 def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(min_freq=0, max_freq=500,
                                                                                  batch="all organoids"):
     show = False
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
 
     percentiles = 0.1
     cov = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
@@ -103,10 +155,10 @@ def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids
 
 
 def fig2b_Smoothened_frequencies_regionHz_Mock_CoV_Stachel_on_batch(min_freq=0, max_freq=500, batch="all organoids"):
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
     percentiles = 0.1
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
-    percentiles = 0.1
-    show = True
+    show = False
     cov_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                     to_include=("freq_50hz_sample", "T=24H"),
                                                     to_exclude=("TTX", "STACHEL", "NI"),
@@ -194,8 +246,9 @@ def fig2b_Smoothened_frequencies_regionHz_Mock_CoV_Stachel_on_batch(min_freq=0, 
 def fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(min_freq, max_freq, batch="all organoids"):
     percentiles = 0.1
     n_components = 3
-    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"], "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
-    #todo : mettre tous les batchs organoids en str
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
+    # todo : mettre tous les batchs organoids en str
 
     covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                             to_include=("freq_50hz_sample", "T=24H"),
@@ -242,8 +295,10 @@ def fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(min_freq, max_
 def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, max_freq=5000,
                                                                 batch="all organoids",
                                                                 ):
+    show = False
     percentiles = 0.1
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"], "all organoids": ["1", "2", "3", "4", "5",
+                                                                                              "6", "7"]}
 
     covni_24 = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                to_include=("freq_50hz_sample", "T=24H"),
@@ -295,14 +350,14 @@ def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, ma
     rfc, _ = fl.train_RFC_from_dataset(discarded_covni_24)
 
     global_df = pd.concat([discarded_covni_24, discarded_covni_30, discarded_covni_0], ignore_index=True)
-
-    fl.test_model(rfc, global_df, training_targets=(f'Mock 24H', f'SARS-CoV-2 24H'),
-                  testing_targets=tuple(set(list((
-                      f'Mock 24H', f'SARS-CoV-2 24H', f'Mock 30MIN', f'SARS-CoV-2 30MIN', f'Mock 0MIN',
-                      f'SARS-CoV-2 0MIN')))),
-                  show=False, verbose=False, savepath=P.FIGURES_PAPER,
-                  title=f"Fig1h Confusion matrix train on T=24H, test on T=24H, 30MIN, 0MIN for {batch} {min_freq}-{max_freq}Hz Mock,CoV",
-                  iterations=5)
+    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock 24H', f'SARS-CoV-2 24H'),
+                               testing_targets=tuple(set(list((
+                                   f'Mock 24H', f'SARS-CoV-2 24H', f'Mock 30MIN', f'SARS-CoV-2 30MIN', f'Mock 0MIN',
+                                   f'SARS-CoV-2 0MIN')))),
+                               show=show, verbose=False, savepath=P.FIGURES_PAPER,
+                               title=f"Fig1h Confusion matrix train on T=24H, test on T=24H, 30MIN, 0MIN for {batch} "
+                                     f"{min_freq}-{max_freq}Hz Mock,CoV",
+                               iterations=5, )
 
 
 def fig1g_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, max_freq=5000,
@@ -314,9 +369,11 @@ def fig1g_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, ma
 
 
 def fig1f_PCA_on_regionHz_all_organoids_for_Mock_CoV(min_freq, max_freq, batch="all organoids"):
+    show = False
     percentiles = 0.1
     n_components = 2
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
 
     covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                             to_include=("freq_50hz_sample", "T=24H"),
@@ -337,14 +394,16 @@ def fig1f_PCA_on_regionHz_all_organoids_for_Mock_CoV(min_freq, max_freq, batch="
 
     pca, pcdf, ratio = fl.fit_pca(discarded_covni, n_components=n_components)
     rounded_ratio = [round(r * 100, 1) for r in ratio]
-    ml.plot_pca(pcdf, n_components=2, show=False, title=f"Fig1f PCA on {min_freq}-{max_freq}Hz {batch} for Mock,CoV",
+    fl.plot_pca(pcdf, n_components=2, show=show, title=f"Fig1f PCA on {min_freq}-{max_freq}Hz {batch} for Mock,CoV",
                 points=True, metrics=True, savedir=P.FIGURES_PAPER, ratios=rounded_ratio)
 
 
 def fig1e_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=0, max_freq=500, train_batch="all organoids",
                                                                 test_batch="all organoids", fig="Fig1e"):
+    show = False
     percentiles = 0.1
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
 
     covni_train_batch = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                         to_include=("freq_50hz_sample", "T=24H"),
@@ -381,20 +440,19 @@ def fig1e_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=0, max_
 
     global_df = pd.concat([discarded_covni_train_batch, discarded_covni_test_batch], ignore_index=True)
 
-    fl.test_model(rfc, global_df, training_targets=(f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}'),
-                  testing_targets=tuple(set(list((
-                      f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}', f'Mock {test_batch}',
-                      f'SARS-CoV-2 {test_batch}')))),
-                  show=False, verbose=False, savepath=P.FIGURES_PAPER,
-                  title=f"{fig} Confusion matrix train on {train_batch}, test on {test_batch} for {min_freq}-{max_freq}Hz Mock,CoV",
-                  iterations=5)
+    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}'),
+                               testing_targets=tuple(set(list((
+                                   f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}', f'Mock {test_batch}',
+                                   f'SARS-CoV-2 {test_batch}')))),
+                               show=show, verbose=False, savepath=P.FIGURES_PAPER,
+                               title=f"{fig} Confusion matrix train on {train_batch}, test on {test_batch} for "
+                                     f"{min_freq}-{max_freq}Hz Mock,CoV",
+                               iterations=5)
 
 
 def fig1d_Amplitude_for_Mock_CoV_in_region_Hz_at_T_24H_for_all_organoids(min_freq=0, max_freq=500):
     show = False
     percentiles = 0.1
-    min_feat = int(min_freq * 300 / 5000)
-    max_feat = int(max_freq * 300 / 5000)
     cov = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                           to_include=("freq_50hz_sample", "T=24H"),
                                           to_exclude=("TTX", "STACHEL", "NI"),
@@ -459,7 +517,8 @@ def fig1d_Amplitude_for_Mock_CoV_in_region_Hz_at_T_24H_for_all_organoids(min_fre
 def fig1c_Feature_importance_for_regionHz_at_T_24H_batch_for_Mock_CoV(min_freq=0, max_freq=500, batch="all organoids"):
     percentiles = 0.1
     show = False
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
 
     class1 = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                              to_include=("freq_50hz_sample", "T=24H"),
@@ -495,7 +554,7 @@ def fig1c_Feature_importance_for_regionHz_at_T_24H_batch_for_Mock_CoV(min_freq=0
 
     rfc, _ = fl.train_RFC_from_dataset(train_df)
 
-    _, mean_importance, _ = fl.get_top_features_from_trained_RFC(rfc, percentage=1, show=False, save=False, title='',
+    _, mean_importance, _ = fl.get_top_features_from_trained_RFC(rfc, percentage=1, show=show, save=False, title='',
                                                                  savepath='')
     plt.figure(figsize=(9, 8))
     plt.plot(mean_importance, color='b', linewidth=1)
@@ -523,7 +582,8 @@ def fig1c_Feature_importance_for_regionHz_at_T_24H_batch_for_Mock_CoV(min_freq=0
 
 def fig1b_Smoothened_frequencies_regionHz_Mock_CoV_on_batch(min_freq=0, max_freq=500, batch="all organoids"):
     percentiles = 0.1
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
 
     show = False
     covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
@@ -575,8 +635,10 @@ def fig1b_Smoothened_frequencies_regionHz_Mock_CoV_on_batch(min_freq=0, max_freq
 
 def fig1a_Confusion_matrix_train_test_on_batches_Mock_CoV(min_freq=0, max_freq=500, train_batch="all organoids",
                                                           test_batch="all organoids"):
+    show = False
     percentiles = 0.1
-    batches = {"batch 1": [1, 2, 3, 4], "batch 2": [5, 6, 7], "all organoids": [1, 2, 3, 4, 5, 6, 7]}
+    batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
+               "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
 
     covni_train_batch = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                         to_include=("freq_50hz_sample", "T=24H"),
@@ -613,18 +675,17 @@ def fig1a_Confusion_matrix_train_test_on_batches_Mock_CoV(min_freq=0, max_freq=5
 
     global_df = pd.concat([discarded_covni_train_batch, discarded_covni_test_batch], ignore_index=True)
 
-    fl.test_model(rfc, global_df, training_targets=(f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}'),
-                  testing_targets=
-                  tuple(set(list((
-                      f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}', f'Mock {test_batch}',
-                      f'SARS-CoV-2 {test_batch}')))),
-                  show=False, verbose=False, savepath=P.FIGURES_PAPER,
-                  title=f"Fig1a Confusion matrix train on {train_batch}, test on {test_batch} Mock,CoV")
+    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}'),
+                               testing_targets=
+                               tuple(set(list((
+                                   f'Mock {train_batch}', f'SARS-CoV-2 {train_batch}', f'Mock {test_batch}',
+                                   f'SARS-CoV-2 {test_batch}')))),
+                               show=show, verbose=False, savepath=P.FIGURES_PAPER,
+                               title=f"Fig1a Confusion matrix train on {train_batch}, test on {test_batch} Mock,CoV")
 
 
 def amplitude_bar_plot_for_mock_cov_cov_stachel_at_T_24_without_outlier_01(min_feat, max_feat):
-    # roi: 0-25 (0-416 Hz) and 230-250 (~3800-4200 Hz)
-    n_components = 2
+    show = False
     percentiles = 0.1
     cov_nostachel = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                                     to_include=("freq_50hz_sample", "T=24H"),
@@ -669,7 +730,6 @@ def amplitude_bar_plot_for_mock_cov_cov_stachel_at_T_24_without_outlier_01(min_f
     discarded_cov_stachel.replace("INF STACHEL0", "Stachel-treated SARS-CoV-2", inplace=True)
     train_df = pd.concat([discarded_cov_nostachel, discarded_cov_stachel], ignore_index=True)
 
-    commentary = f"outliers percentile={str(percentiles).replace('.', '')}"
     rfc, _ = fl.train_RFC_from_dataset(train_df)
     global_df = pd.concat([train_df, discarded_ni_nostachel], ignore_index=True)
 
@@ -693,9 +753,11 @@ def amplitude_bar_plot_for_mock_cov_cov_stachel_at_T_24_without_outlier_01(min_f
     plt.ylabel("Mean amplitude [pV]", fontsize=25)
 
     plt.savefig(os.path.join(P.RESULTS, f"Amplitude barplot for Mock,CoV,CoV Stachel at T=24H restricted between "
-                                        f"{int(min_feat * 5000 / 300)}Hz and {int(max_feat * 5000 / 300)}Hz organoids1,2,3,4 for Ni,CoV.png"),
+                                        f"{int(min_feat * 5000 / 300)}Hz and {int(max_feat * 5000 / 300)}Hz "
+                                        f"organoids1,2,3,4 for Ni,CoV.png"),
                 dpi=1200)
-    plt.show()
+    if show:
+        plt.show()
 
 
 def smoothened_frequencies_for_Mock_CoV_CoV_Stachel_at_T_24H_without_outliers_01():
