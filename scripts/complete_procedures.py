@@ -14,7 +14,7 @@ import machine_learning as ml
 import signal_processing as spr
 
 
-def fig2d_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz_test_on_stachel(min_freq=300, max_freq=5000,
+def fig2d_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz_test_on_stachel(min_freq=0, max_freq=5000,
                                                                                 batch="batch 2",
                                                                                 ):
     show = False
@@ -52,20 +52,20 @@ def fig2d_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz_test_on_stachel(
 
     discarded_covni["label"].replace(f'INF', f'SARS-CoV-2', inplace=True)
     discarded_covni["label"].replace(f'NI', f'Mock', inplace=True)
-    discarded_cov_stachel["label"].replace(f'INF', f'Stachel-treated SARS-CoV-2', inplace=True)
+    discarded_cov_stachel["label"].replace(f'INF', f'Stachel-treated\nSARS-CoV-2', inplace=True)
     rfc, _ = fl.train_RFC_from_dataset(discarded_covni)
 
     global_df = pd.concat([discarded_covni, discarded_cov_stachel, ], ignore_index=True)
     fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock', f'SARS-CoV-2'),
                                testing_targets=tuple(set(list((
-                                   f'Mock', f'SARS-CoV-2', f'SARS-CoV-2', f'Stachel-treated SARS-CoV-2',)))),
+                                   f'Mock', f'SARS-CoV-2', f'SARS-CoV-2', f'Stachel-treated\nSARS-CoV-2',)))),
                                show=show, verbose=False, savepath=P.FIGURES_PAPER,
                                title=f"Fig2d Confusion matrix train on T=24H CoV,Mock, test on CpV,Mock,Stachel for {batch} "
                                      f"{min_freq}-{max_freq}Hz",
                                iterations=5, )
 
 
-def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(min_freq=0, max_freq=500,
+def fig2c_Amplitude_for_Mock_CoV_Stachel_in_region_Hz_at_T_24H_for_all_organoids(min_freq=0, max_freq=5000,
                                                                                  batch="all organoids"):
     show = False
     batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
@@ -245,10 +245,9 @@ def fig2b_Smoothened_frequencies_regionHz_Mock_CoV_Stachel_on_batch(min_freq=0, 
 
 def fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(min_freq, max_freq, batch="all organoids"):
     percentiles = 0.1
-    n_components = 3
+    n_components = 2
     batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"],
                "all organoids": ["1", "2", "3", "4", "5", "6", "7"]}
-    # todo : mettre tous les batchs organoids en str
 
     covni = fp.make_dataset_from_freq_files(parent_dir=P.NOSTACHEL,
                                             to_include=("freq_50hz_sample", "T=24H"),
@@ -295,7 +294,7 @@ def fig2a_PCA_on_regionHz_all_organoids_for_Mock_CoV_test_stachel(min_freq, max_
 def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, max_freq=5000,
                                                                 batch="all organoids",
                                                                 ):
-    show = False
+    show = True
     percentiles = 0.1
     batches = {"batch 1": ["1", "2", "3", "4"], "batch 2": ["5", "6", "7"], "all organoids": ["1", "2", "3", "4", "5",
                                                                                               "6", "7"]}
@@ -341,19 +340,19 @@ def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, ma
     discarded_covni_0 = fp.discard_outliers_by_iqr(covni_0, low_percentile=percentiles,
                                                    high_percentile=1 - percentiles,
                                                    mode='capping')
-    discarded_covni_24["label"].replace(f'INF', f'SARS-CoV-2 24H', inplace=True)
-    discarded_covni_24["label"].replace(f'NI', f'Mock 24H', inplace=True)
-    discarded_covni_30["label"].replace(f'INF', f'SARS-CoV-2 30MIN', inplace=True)
-    discarded_covni_30["label"].replace(f'NI', f'Mock 30MIN', inplace=True)
-    discarded_covni_0["label"].replace(f'INF', f'SARS-CoV-2 0MIN', inplace=True)
-    discarded_covni_0["label"].replace(f'NI', f'Mock 0MIN', inplace=True)
+    discarded_covni_24["label"].replace(f'INF', f'Cov 24h', inplace=True)
+    discarded_covni_24["label"].replace(f'NI', f'Mock 24h', inplace=True)
+    discarded_covni_30["label"].replace(f'INF', f'Cov 30 min', inplace=True)
+    discarded_covni_30["label"].replace(f'NI', f'Mock 30 min', inplace=True)
+    discarded_covni_0["label"].replace(f'INF', f'Cov 0 min', inplace=True)
+    discarded_covni_0["label"].replace(f'NI', f'Mock 0 min', inplace=True)
     rfc, _ = fl.train_RFC_from_dataset(discarded_covni_24)
 
     global_df = pd.concat([discarded_covni_24, discarded_covni_30, discarded_covni_0], ignore_index=True)
-    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock 24H', f'SARS-CoV-2 24H'),
+    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock 24h', f'Cov 24h'),
                                testing_targets=tuple(set(list((
-                                   f'Mock 24H', f'SARS-CoV-2 24H', f'Mock 30MIN', f'SARS-CoV-2 30MIN', f'Mock 0MIN',
-                                   f'SARS-CoV-2 0MIN')))),
+                                   f'Mock 24h', f'Cov 24h', f'Mock 30 min', f'Cov 30 min', f'Mock 0 min',
+                                   f'Cov 0 min')))),
                                show=show, verbose=False, savepath=P.FIGURES_PAPER,
                                title=f"Fig1h Confusion matrix train on T=24H, test on T=24H, 30MIN, 0MIN for {batch} "
                                      f"{min_freq}-{max_freq}Hz Mock,CoV",
