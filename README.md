@@ -23,6 +23,7 @@ illustration purpose only, and may not be relevant with the actual article this 
 
 ### Frequency/power plots
 Plot your signal in the frequency domain.
+
 <img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/smoothened_frequencies.png" width=250 height=250>
 
 ### Amplitude barplot
