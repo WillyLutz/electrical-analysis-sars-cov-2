@@ -23,36 +23,35 @@ illustration purpose only, and may not be relevant with the actual article this 
 
 ### Frequency/power plots
 Plot your signal in the frequency domain.
-
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures_README/smoothened_frequencies.png" width=250 height=250>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/smoothened_frequencies.png" width=250 height=250>
 
 ### Amplitude barplot
 Compute the average power and variation of different labels. Allows a restriction to a specific frequency range.
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/barplot amplitude.png" width=250 height=250>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/barplot_amplitude.png" width=250 height=250>
 
 ### 2D PCA plot
 Fit a Principal Component Analysis on you data and plot it in a two-dimensionnal space. You can also decide to fit the
 model only on a few label, then apply the transformation to another !
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/pca 2D.png" width=250 height=250>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/pca_2D.png" width=250 height=250>
 
 ### 3D PCA plot
 Fit a Principal Component Analysis on you data and plot it in a three-dimensionnal space. You can also decide to fit the
 model only on a few label, then apply the transformation to another !
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/PCA 3D.png" width=250 height=250>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/PCA_3D.png" width=250 height=250>
 
 ### Confusion matrix
 Used to check the performance of a machine learning model, here Random Forest Classifier. You can train on specific label
 and test you model on different ones, to see where the model classify them among the training labels.
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/confusion matrix.png" width=600 height=200>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/confusion_matrix.png" width=600 height=200>
 
 ### Feature importance
 Plot the relative importance of the features for a trained RFC model.
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/feature importance.png" width=250 height=250> 
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/feature_importance.png" width=250 height=250> 
 
 ## Data acquisition
 The signal has been recorded at 10 kHz, with a MEA 60 channels electrode. 
@@ -127,7 +126,7 @@ Usually of format similar as following:
 In fact it is equivalent to the raw file with only th data (beheaded of the information headlines).
 It may look like:
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/sshot%20pr%20file%20sarscov.png" width=950 heigth=230>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/sshot_pr_file_sarscov.png" width=950 heigth=230>
 
 The column headers are normalized to function with the project. Other headers will not function without modifying directly the code.
 
@@ -137,7 +136,7 @@ Usually a format similar as following:
 
 It is the result of the Fast Fourier Transform applied on the average signal across the channels (after channel selection) from the processed files. It mayt look like this:
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/sshot%20freq%20file%20sarscov.png" width=200 heigth=300>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/sshot_freq_file_sarscov.png" width=200 heigth=300>
 
 The column headers 'mean' and 'Frequency [Hz]' are normalized to function with the project. Other headers will not function without modifying directly the code.
 
