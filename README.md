@@ -118,7 +118,7 @@ Usually of format similar as following:
 ```2022-09-16T14-02-25t=24h NI1 STACHEL_D-00145_Recording-0_(Data Acquisition (1);MEA2100-Mini; Electrode Raw Data1)_Analog.csv```
 
 This type of file contains the raw output in csv format of the electrode array. It may look as following:
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/sshot%20raw%20file%20sarscov.png" width=950 heigth=320>
+<img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/sshot_raw_file_sarscov.png" width=950 heigth=320>
 
 #### Processed format
 Usually of format similar as following: 
