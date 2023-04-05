@@ -13,7 +13,9 @@ You can also check out [other repositories with a similar use](#other-repositori
 
 ## Development context
 This project is developed in the context of public research in biology. It has been developed as support for the 
-publication <ins>_**put publication reference**_</ins>.
+publication <ins>_**Emma Partiot, Aurélie Hirschler, Sophie Colomb, Willy Lutz, Tine Claeys, François
+Delalande, et al. Trans-synaptic dwelling of SARS-CoV-2 particles perturbs neural synapse
+organization and function. BioRxiv. 2022.**_</ins>.
 
 ## Visuals and resulting figures
 On this part you will have a quick overview on the different resulting figures possible with this project. They will be given without context and are for 
@@ -22,7 +24,7 @@ illustration purpose only, and may not be relevant with the actual article this 
 ### Frequency/power plots
 Plot your signal in the frequency domain.
 
-<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures README/smoothened frequencies.png" width=250 height=250>
+<img src="https://github.com/WillyLutz/sars-cov-organoids/blob/main/Figures_README/smoothened_frequencies.png" width=250 height=250>
 
 ### Amplitude barplot
 Compute the average power and variation of different labels. Allows a restriction to a specific frequency range.
