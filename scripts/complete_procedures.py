@@ -56,10 +56,10 @@ def fig2d_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz_test_on_stachel(
     rfc, _ = fl.train_RFC_from_dataset(discarded_covni)
 
     global_df = pd.concat([discarded_covni, discarded_cov_stachel, ], ignore_index=True)
-    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock', f'SARS-CoV-2'),
+    fl.test_rfc_by_confusion(rfc, global_df, training_targets=(f'Mock', f'SARS-CoV-2'),
                                testing_targets=tuple(set(list((
                                    f'Mock', f'SARS-CoV-2', f'SARS-CoV-2', f'Stachel-treated\nSARS-CoV-2',)))),
-                               show=show, verbose=False, savepath=P.FIGURES_PAPER,
+                               show=show, verbose=False, savepath=P.RESULTS,
                                title=f"Fig2d Confusion matrix train on T=24H CoV,Mock, test on CpV,Mock,Stachel for {batch} "
                                      f"{min_freq}-{max_freq}Hz",
                                iterations=5, )
@@ -349,11 +349,11 @@ def fig1h_Confusion_matrix_train_on_batch_Mock_CoV_in_region_Hz(min_freq=300, ma
     rfc, _ = fl.train_RFC_from_dataset(discarded_covni_24)
 
     global_df = pd.concat([discarded_covni_24, discarded_covni_30, discarded_covni_0], ignore_index=True)
-    fl.test_model_by_confusion(rfc, global_df, training_targets=(f'Mock 24h', f'Cov 24h'),
+    fl.test_rfc_by_confusion(rfc, global_df, training_targets=(f'Mock 24h', f'Cov 24h'),
                                testing_targets=tuple(set(list((
                                    f'Mock 24h', f'Cov 24h', f'Mock 30 min', f'Cov 30 min', f'Mock 0 min',
                                    f'Cov 0 min')))),
-                               show=show, verbose=False, savepath=P.FIGURES_PAPER,
+                               show=show, verbose=False, savepath=P.RESULTS,
                                title=f"Fig1h Confusion matrix train on T=24H, test on T=24H, 30MIN, 0MIN for {batch} "
                                      f"{min_freq}-{max_freq}Hz Mock,CoV",
                                iterations=5, )
