@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
 
-import fiiireflyyy.firefiles as ff
-import fiiireflyyy.firelearn as fl
-import fiiireflyyy.fireprocess as fp
+import fiiireflyyy.files as ff
+import fiiireflyyy.learn as fl
+import fiiireflyyy.process as fp
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd

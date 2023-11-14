@@ -3,7 +3,6 @@ import pickle
 import time
 from random import randint
 
-import forestci
 import numpy as np
 import sklearn
 from matplotlib.collections import PathCollection
@@ -17,8 +16,8 @@ from sklearn.metrics import accuracy_score, confusion_matrix, classification_rep
 import pandas as pd
 import matplotlib.pyplot as plt
 import data_processing as dpr
-import fiiireflyyy.firelearn as fl
-import fiiireflyyy.firefiles as ff
+import fiiireflyyy.learn as fl
+import fiiireflyyy.files as ff
 import PATHS as P
 import sys
 

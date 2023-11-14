@@ -6,7 +6,7 @@ import pandas as pd
 import signal_processing as spr
 import numpy as np
 import machine_learning as ml
-import fiiireflyyy.firefiles as ff
+import fiiireflyyy.files as ff
 import PATHS as P
 from pathlib import Path
 import matplotlib.pyplot as plt
