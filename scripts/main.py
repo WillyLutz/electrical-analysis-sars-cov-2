@@ -3,7 +3,7 @@ import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
 
-import complete_procedures as cp
+import complete_procedures_deprecated as cp
 import fiiireflyyy.learn as fl
 import fiiireflyyy.process as fp
 
