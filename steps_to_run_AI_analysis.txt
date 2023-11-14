@@ -11,6 +11,9 @@ this should output the installed python version.
         If you are using PyCharm as an IDE, online help is available here, at the section
         'Check out a project from a remote host (git clone)':
         https://www.jetbrains.com/help/pycharm/set-up-a-git-repository.html#put-existing-project-under-Git
+    Step 1.1 - Clone the GitHub repository using a terminal
+        To do so, please refer to GitHub online support, section 'Cloning a repository'
+        https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository
 
     Step 2 - Creating the environment on Pycharm
         If you are using PyCharm, follow this step. Else go to step 2.1.
