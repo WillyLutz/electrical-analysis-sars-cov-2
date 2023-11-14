@@ -10,56 +10,33 @@ import fiiireflyyy.process as fp
 
 def main():
     percentiles = 0.1
-    base = "/home/wlutz/PycharmProjects/sars-cov-organoids/datasets"
-    t0inf = pd.read_csv(f"{base}/DATASET_T=0 INF.csv", index_col=False)
-    dt0inf = fp.discard_outliers_by_iqr(t0inf, low_percentile=percentiles,
+    
+    merge = pd.read_csv("/media/wlutz/TOSHIBA EXT/Electrical activity analysis/spike experiment young organoids/DATASET/merge.csv")
+    ni = merge[merge["label"] == "Mock T24"]
+    cov = merge[merge["label"] == "Inf T24"]
+    spike = merge[merge["label"] == "Spike T24"]
+    ni = fp.discard_outliers_by_iqr(ni, low_percentile=percentiles,
                                         high_percentile=1 - percentiles,
                                         mode='capping')
-    dt0inf["label"].replace(f'Sars-CoV', f'Sars-CoV\n0min', inplace=True)
+    cov = fp.discard_outliers_by_iqr(cov, low_percentile=percentiles,
+                                    high_percentile=1 - percentiles,
+                                    mode='capping')
+    spike = fp.discard_outliers_by_iqr(spike, low_percentile=percentiles,
+                                        high_percentile=1 - percentiles,
+                                        mode='capping')
     
-    t30inf = pd.read_csv(f"{base}/DATASET_T=30MIN INF.csv", index_col=False)
-    dt30inf = fp.discard_outliers_by_iqr(t30inf, low_percentile=percentiles,
-                                         high_percentile=1 - percentiles,
-                                         mode='capping')
-    dt30inf["label"].replace(f'Sars-CoV', f'Sars-CoV\n30min', inplace=True)
-    
-    t24inf = pd.read_csv(f"{base}/DATASET_T=24H INF.csv", index_col=False)
-    dt24inf = fp.discard_outliers_by_iqr(t24inf, low_percentile=percentiles,
-                                         high_percentile=1 - percentiles,
-                                         mode='capping')
-    dt24inf["label"].replace(f'Sars-CoV', f'Sars-CoV\n24h', inplace=True)
-    
-    t0mock = pd.read_csv(f"{base}/DATASET_T=0 MOCK.csv", index_col=False)
-    dt0mock = fp.discard_outliers_by_iqr(t0mock, low_percentile=percentiles,
-                                         high_percentile=1 - percentiles,
-                                         mode='capping')
-    dt0mock["label"].replace(f'Mock', f'Mock\n0min', inplace=True)
-    
-    t30mock = pd.read_csv(f"{base}/DATASET_T=30MIN MOCK.csv", index_col=False)
-    dt30mock = fp.discard_outliers_by_iqr(t30mock, low_percentile=percentiles,
-                                          high_percentile=1 - percentiles,
-                                          mode='capping')
-    dt30mock["label"].replace(f'Mock', f'Mock\n30min', inplace=True)
-    
-    t24mock = pd.read_csv(f"{base}/DATASET_T=24H MOCK.csv", index_col=False)
-    dt24mock = fp.discard_outliers_by_iqr(t24mock, low_percentile=percentiles,
-                                          high_percentile=1 - percentiles,
-                                          mode='capping')
-    dt24mock["label"].replace(f'Mock', f'Mock\n24h', inplace=True)
-    
-    rfc, _ = fl.train_RFC_from_dataset(pd.concat([dt24mock, dt24inf], ignore_index=True))
-    df = pd.concat([dt24mock, dt24inf, dt0mock, dt0inf, dt30mock, dt30inf],
+    rfc, _ = fl.train_RFC_from_dataset(pd.concat([ni, cov], ignore_index=True))
+    df = pd.concat([ni, cov, spike],
                    ignore_index=True)
     
     fl.test_clf_by_confusion(rfc, df,
-                             training_targets=(f'Mock\n24h', f'Sars-CoV\n24h',),
-                             testing_targets=tuple(set(list((
-                                 f'Mock\n24h', 'Sars-CoV\n24h',
-                                 f'Mock\n0min', 'Sars-CoV\n0min',
-                                 f'Mock\n30min', 'Sars-CoV\n30min',)))),
+                             training_targets=(f'Mock T24', f'Inf T24',),
+                             testing_targets=(f'Mock T24', 'Inf T24', f'Spike T24', ),
                              show=True, verbose=False, savepath="",
                              title=f"",
-                             iterations=5, )
+                             iterations=1, )
+    
+    # for more tests and possibilities please refer to the fiiireflyyy library
 
 
 main()
