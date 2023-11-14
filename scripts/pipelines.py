@@ -38,7 +38,7 @@ def confusion(train, test):
                              testing_targets=train + test,
                              show=True, verbose=False, savepath="",
                              title=f"",
-                             iterations=1, )
+                             iterations=5, )
 
 
 def pca(train, test, n_component):

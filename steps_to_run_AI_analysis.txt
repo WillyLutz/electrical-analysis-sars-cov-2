@@ -1,0 +1,79 @@
+In order to use and run this project, Python 3.10 or superior must be installed and operational on the machine.
+To check if Python is correctly installed, open a terminal and run
+python3 --version
+
+this should output the installed python version.
+
+---- RUNNING THE PROJECT SAMPLE---
+    Step 1 - Clone the GitHub repository
+        If you are using a different IDE as PyCharm, please refer to its online help to clone a GitHub repository, then
+        go to step 2.
+        If you are using PyCharm as an IDE, online help is available here, at the section
+        'Check out a project from a remote host (git clone)':
+        https://www.jetbrains.com/help/pycharm/set-up-a-git-repository.html#put-existing-project-under-Git
+
+    Step 2 - Creating the environment on Pycharm
+        If you are using PyCharm, follow this step. Else go to step 2.1.
+
+        Go to File|Settings|Project:<ProjectName>|Python Interpreter
+        then click Add Interpreter|Add Local Interpreter
+        Ensure that you are creating a new environment, and under the base interpreter Python3.10 or superior.
+        Then Apply the changes.
+        A folder 'venv' (or whatever name you named your virtual environment) should hae appeared.
+        When you open the PyCharm terminal, a '(venv)' should have appeared at the beginning of your command line.
+
+    Step 2.1 - Creating the environment on terminal
+        If you are using a terminal, if virtualenv is not installed, run the command:
+        pip install virtualenv
+
+        then create a virtual environment by executing the command:
+        python -m venv /path/to/new/virtual/environment
+
+        go to your environment :
+        cd /path/to/new/virtual/environment
+
+        then activate the virtual environment using the command:
+        source venv/bin/activate
+
+        a '(venv)' should have appeared at the beginning of your command line.
+
+    Step 3 - Installing the environment
+        Whether you are on PyCharm or terminal, make sure you have your virtual environment activated with '(venv)' at
+        the beginning of your line.
+
+        run the command
+        pip install -r requirements.txt
+
+        This should have installed the required python packages for running the project.
+        If at any point while running the project, you encounter the following error :
+        ModuleNotFoundError: No module named '<ThePackageName>'
+
+        run the command in the terminal:
+        pip install <ThePackageName>
+
+        for instance
+        pip install matplotlib
+
+    Step 4 - Running the project on PyCharm
+        To run the project, run the 'main.py' file.
+
+    Step 4.1 - Running the project on terminal
+        To run the project, run the command
+        python main.py
+
+    The steps 4 and 4.1 should output 3 different plots :
+     - A feature importance plot of an RFC model trained on 'Mock T24' (mock signal at T=24h) and 'Inf T24' (Sars-CoV-2
+     infected signal at T=24hpi).
+     - a PCA (2 components) fitted on 'Mock T24' (mock signal at T=24h) and 'Inf T24' (Sars-CoV-2 infected signal at
+     T=24hpi), with its transformation applied to a third condition, 'Spike T24'.
+     - a confusion matrix resulting from an RFC model trained on 'Mock T24' (mock signal at T=24h) and 'Inf T24' (Sars-CoV-2
+     infected signal at T=24hpi), and tested on an unseen third condition, 'Spike T24'.
+
+
+---- RUNNING THE PROJECT ON CUSTOM DATA ----
+This project has been developed on a specific format of data. Refer to the GitHub README.md for additional details.
+The merge.csv file used as sample here is actual data used for the submitted article.
+The merge.csv file is a ready-to-analyse file that underwent the processes detailed in the submitted article.
+For more information, please refer to the manuscript, section 'Electrical activity analysis using machine learning'
+
+
