@@ -7,58 +7,87 @@ import fiiireflyyy.learn as fl
 import os
 import fiiireflyyy.process as fp
 import numpy as np
+from sklearn.model_selection import train_test_split
 
 
-def confusion(train, test):
+def confusion(train, test, merge_path="example_data/merge.csv"):
     percentiles = 0.1
     
-    merge = pd.read_csv(os.path.join(os.getcwd(), 'example_data/merge.csv'), index_col=False)
-    train_dataframes = []
-    test_dataframes = []
-    for tr in train:
-        df = merge[merge["label"] == tr]
-        df = fp.discard_outliers_by_iqr(df, low_percentile=percentiles,
-                                        high_percentile=1 - percentiles,
-                                        mode='capping')
-        train_dataframes.append(df)
-        test_dataframes.append(df)
     
-    for te in test:
-        if te not in train:
-            df = merge[merge["label"] == te]
-            df = fp.discard_outliers_by_iqr(df, low_percentile=percentiles,
+    
+    merge = pd.read_csv(os.path.join(os.getcwd(), merge_path), index_col=False)
+    
+    # random split train test for train labels
+    df_train = merge[merge["label"].isin(train)]
+    X = df_train[df_train.columns[:-1]]
+    y = df_train["label"]
+    X_train_tr, X_test_tr, y_train_tr, y_test_tr = train_test_split(X, y, train_size=0.7)
+    
+    # random split train test for test labels
+    # todo : handle case where there is not test
+    df_test = merge[merge["label"].isin(test)]
+    X = df_test[df_test.columns[:-1]]
+    y = df_test["label"]
+    X_train_te, X_test_te, y_train_te, y_test_te = train_test_split(X, y, train_size=0.7)
+    
+    # aggregating label column for outlier removal
+    X_train_tr["label"] = y_train_tr
+    X_train_te["label"] = y_train_te
+    X_test_tr["label"] = y_test_tr
+    X_test_te["label"] = y_test_te
+    
+    # get iqr metrics on training labels only
+    _, iqr_metrics = fp.discard_outliers_by_iqr(X_train_tr, low_percentile=percentiles,
+                                                high_percentile=1 - percentiles,
+                                                mode='capping', metrics=None)
+    
+    # apply outlier removal to all sub datasets
+    X_train_tr = fp.discard_outliers_by_iqr(X_train_tr, low_percentile=percentiles,
                                             high_percentile=1 - percentiles,
-                                            mode='capping')
-            test_dataframes.append(df)
+                                            mode='capping', metrics=iqr_metrics)
+    X_train_te = fp.discard_outliers_by_iqr(X_train_te, low_percentile=percentiles,
+                                            high_percentile=1 - percentiles,
+                                            mode='capping', metrics=iqr_metrics)
+    X_test_tr = fp.discard_outliers_by_iqr(X_test_tr, low_percentile=percentiles,
+                                           high_percentile=1 - percentiles,
+                                           mode='capping', metrics=iqr_metrics)
+    X_test_te = fp.discard_outliers_by_iqr(X_test_te, low_percentile=percentiles,
+                                           high_percentile=1 - percentiles,
+                                           mode='capping', metrics=iqr_metrics)
     
-    rfc, _ = fl.train_RFC_from_dataset(pd.concat(train_dataframes, ignore_index=True))
+    # concatenating post outliers removal for model training
+    processed_df_train = pd.concat([X_train_tr, X_test_tr], ignore_index=True)
+    processed_df_test = pd.concat([X_train_te, X_test_te], ignore_index=True)
     
-    fl.test_clf_by_confusion(rfc, pd.concat(test_dataframes, ignore_index=True),
+    
+    
+    rfc, _ = fl.train_RFC_from_dataset(processed_df_train)
+    fl.test_clf_by_confusion(rfc, pd.concat([processed_df_train, processed_df_test], ignore_index=True),
                              training_targets=train,
                              testing_targets=train + test,
                              show=True, verbose=False, savepath="",
                              title=f"",
-                             iterations=5, )
+                             iterations=10, )
 
 
-def pca(train, test, n_component):
+def pca(train, test, n_component, merge_path):
     percentiles = 0.1
     
-    merge = pd.read_csv(os.path.join(os.getcwd(), 'example_data/merge.csv'), index_col=False)
+    merge = pd.read_csv(os.path.join(os.getcwd(), merge_path), index_col=False)
     train_dataframes = []
     test_dataframes = []
+    
     for tr in train:
         df = merge[merge["label"] == tr]
-        df = fp.discard_outliers_by_iqr(df, low_percentile=percentiles,
+        df, _ = fp.discard_outliers_by_iqr(df, low_percentile=percentiles,
                                         high_percentile=1 - percentiles,
                                         mode='capping')
         train_dataframes.append(df)
-        test_dataframes.append(df)
     
     for te in test:
         if te not in train:
             df = merge[merge["label"] == te]
-            df = fp.discard_outliers_by_iqr(df, low_percentile=percentiles,
+            df, _ = fp.discard_outliers_by_iqr(df, low_percentile=percentiles,
                                             high_percentile=1 - percentiles,
                                             mode='capping')
             test_dataframes.append(df)
@@ -71,45 +100,3 @@ def pca(train, test, n_component):
                 show=True,
                 metrics=True,
                 ratios=[round(x, 2) for x in ratios])
-
-
-def feature_importance(train):
-    percentiles = 0.1
-    
-    merge = pd.read_csv(os.path.join(os.getcwd(), 'example_data/merge.csv'), index_col=False)
-    train_dataframes = []
-    test_dataframes = []
-    for tr in train:
-        df = merge[merge["label"] == tr]
-        df = fp.discard_outliers_by_iqr(df, low_percentile=percentiles,
-                                        high_percentile=1 - percentiles,
-                                        mode='capping')
-        train_dataframes.append(df)
-        test_dataframes.append(df)
-    
-    rfc, _ = fl.train_RFC_from_dataset(pd.concat(train_dataframes, ignore_index=True))
-    
-    _, mean_importance = fl.get_top_features_from_trained_RFC(rfc, percentage=1, show=False, save=False, title='',
-                                                              savepath='')
-    
-    y_data = np.mean([tree.feature_importances_ for tree in rfc.estimators_], axis=0)
-    x_data = [i for i in range(len(y_data))]
-    
-    plt.plot(x_data, y_data, color="royalblue", )
-    
-    ylim = plt.gca().get_ylim()
-    plt.fill_between(x_data, y_data, ylim[0], color="royalblue", alpha=0.5)
-    
-    plt.xlabel("Frequency [Hz]", fontdict={"fontsize": 16})
-    plt.ylabel("Relative importance [AU]", fontdict={"fontsize": 16})
-    
-    hertz = []
-    factor = 5000 / 300
-    for i in range(300):
-        hertz.append(int(i * factor))
-    xticks = [x for x in range(0, 300, 50)]
-    new_ticks = [hertz[x] for x in xticks]
-    xticks.append(300)
-    new_ticks.append(5000)
-    plt.xticks(xticks, new_ticks)
-    plt.show()

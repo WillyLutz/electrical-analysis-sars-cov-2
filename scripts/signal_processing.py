@@ -5,7 +5,6 @@ from scipy.signal import butter, filtfilt, freqz, iirnotch
 import numpy as np
 import pandas as pd
 
- # todo put to fiiireflyyy
 def make_envelope(y, threshold, distance):
     peaks = find_peaks(y, threshold=threshold, distance=distance)
     return peaks
@@ -20,12 +19,9 @@ def butter_filter(signal, order, lowcut):
     b, a = butter(order, low, btype='highpass')
     w, h = freqz(b, a)
 
-    #xanswer = (w / (2 * np.pi)) * freq
-    #yanswer = 20 * np.log10(abs(h))
-
     filtered_signal = filtfilt(b, a, signal)
 
-    return filtered_signal  # , xanswer, yanswer
+    return filtered_signal
 
 
 def fast_fourier(dfy, freq):
