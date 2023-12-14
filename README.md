@@ -51,6 +51,9 @@ and test you model on different ones, to see where the model classify them among
 
 ### Feature importance
 Plot the relative importance of the features for a trained RFC model.
+NB : By default, we use the 'impurity' based feature importance. However, as per the documentation,
+"Warning: impurity-based feature importances can be misleading for high cardinality features (many unique values)".
+As such wa also advice to test the 'permutation' based feature importance, by adjusting the concerned parameter.
 
 <img src="https://github.com/WillyLutz/electrical-analysis-sars-cov-2/blob/main/Figures_README/feature_importance.png" width=250 height=250> 
 
