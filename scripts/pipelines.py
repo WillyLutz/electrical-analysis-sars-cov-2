@@ -49,12 +49,13 @@ def confusion(train, test=None, merge_path="example_data/merge.csv", savepath=''
     fl.test_clf_by_confusion(rfc, df,
                              training_targets=train,
                              testing_targets=train + test,
-                             show=True,
+                             show=False,
                              verbose=False,
                              savepath=savepath,
                              title=title,
-                             iterations=10, )
-
+                             iterations=10,
+                             mode="percent")
+    print('done')
 
 def pca(train, test=None, merge_path="example_data/merge.csv", savepath='', title=''):
     percentiles = 0.1
@@ -73,7 +74,6 @@ def pca(train, test=None, merge_path="example_data/merge.csv", savepath='', titl
     pca, pcdf, ratio = fl.fit_pca(df_train_labels, 2)
     
     # random split train test for test labels
-    df_test_labels = pd.DataFrame()
     test_pcdf = pd.DataFrame()
     if test:
         df_test_labels = merge[merge["label"].isin(test)]
